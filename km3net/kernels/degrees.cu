@@ -21,13 +21,14 @@
 #define window_width 1500
 #endif
 
+
+
 __global__ void degrees_dense(int *degree, uint8_t *correlations, int n) {
 
     //node id for which this thread is responsible
     int i = blockIdx.x * block_size_x + threadIdx.x;
 
     if (i < n) {
-
         int in_degree = 0;
 
         for (int j=window_width-1; j>=0; j--) {
@@ -36,9 +37,11 @@ __global__ void degrees_dense(int *degree, uint8_t *correlations, int n) {
             if (col >= 0 && correlations[pos] == 1) {
                 in_degree++;
             }
-    }
+        }
 
-    degree[i] += in_degree;   //already contains the out-degree, simply add the in-degree
+        //could implement a cutoff here to remove all nodes with degree less than some threshold
+
+        degree[i] += in_degree;   //already contains the out-degree, simply add the in-degree
     }
 }
 

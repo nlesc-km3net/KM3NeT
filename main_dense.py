@@ -12,14 +12,14 @@ import pycuda.driver
 from test.context import skip_if_no_cuda_device, get_kernel_path
 
 skip_if_no_cuda_device()
-N = np.int32(27)
-sliding_window_width = np.int32(9)
+N = np.int32(4.5e5)
+sliding_window_width = np.int32(1500)
 
 #generate input data with an expected density of correlated hits
 x = np.random.normal(0.2, 0.1, N).astype(np.float32)
 y = np.random.normal(0.2, 0.1, N).astype(np.float32)
 z = np.random.normal(0.2, 0.1, N).astype(np.float32)
-ct = 10*np.random.normal(0.5, 0.06, N).astype(np.float32)
+ct = 1000*np.random.normal(0.5, 0.06, N).astype(np.float32)
 correlations = np.zeros((sliding_window_width, N), 'uint8')
 sums = np.zeros(N).astype(np.int32) # TODO: do we really need int32? 
 
@@ -42,7 +42,11 @@ z_gpu = drv.mem_alloc(z.nbytes)
 ct_gpu = drv.mem_alloc(ct.nbytes)
 sums_gpu = drv.mem_alloc(sums.nbytes)
 correlations_gpu = drv.mem_alloc(correlations.nbytes)
-# memory you allocate on the GPU is not clean, and may contain results from previous runs. Therefore:
+# memory you allocate on the GPU is not clean, and may contain results from previous runs. Therefore memset.
+
+# too large to be set in one go, last parameter expects 'unsigned int' https://github.com/inducer/pycuda/blob/master/src/wrapper/wrap_cudadrv.cpp
+# so maximum value expected should be 4294967295. For 4.5e6x1500=6750000000, it will overflow.
+# We probably need to set it piece by piece
 drv.memset_d8(correlations_gpu, 0, correlations.shape[0]*correlations.shape[1])
 drv.memset_d32(sums_gpu, 0, sums.shape[0]) # TODO: do we really need int32
 end_malloc = time.time()
@@ -62,7 +66,7 @@ print('Data transfer from host to device took {0:.2e}s.\n'.format(end_transfer -
 
 
 #### RUN KERNEL quadratic_difference_linear ####
-block_size_x = 9
+block_size_x = 256
 block_size_y = 1
 gridx = int(np.ceil(correlations.shape[1]/block_size_x))
 gridy = int(1)
@@ -87,33 +91,37 @@ print('Time taken for GPU computations of first kernel is {0:.2e}s.\n'.format(se
 
 
 #### TRANSFER BACK (we won't need this later) ####
-start_transfer = time.time()
-drv.memcpy_dtoh(correlations, correlations_gpu)
-pycuda.driver.stop_profiler()
-end_transfer = time.time()
+#start_transfer = time.time()
+#drv.memcpy_dtoh(correlations, correlations_gpu)
+#pycuda.driver.stop_profiler()
+#end_transfer = time.time()
 
-print('Data transfer from device to host took {0:.2e}s.\n'.format(end_transfer -start_transfer))
-print('correlations = \n', correlations)
+#print('Data transfer from device to host took {0:.2e}s.\n'.format(end_transfer -start_transfer))
+#print('correlations = \n', correlations)
 
 ### SECOND KERNEL ####
 degrees_dense = kernel_mod.get_function("degrees_dense")
 #### RUN KERNEL degrees ####
-start.record() # start timing
+
+pycuda.autoinit.context.synchronize()
+#start.record() # start timing
 degrees_dense(
         sums_gpu, correlations_gpu, N,
         block=(block_size_x, block_size_y, 1), grid=(gridx, gridy))
+
 pycuda.autoinit.context.synchronize()
 
-end.record() # end timing
-end.synchronize()
+#end.record() # end timing
+#end.synchronize()
 
-secs = start.time_till(end)*1e-3
-print('Time taken for GPU computations of second kernel is {0:.2e}s.\n'.format(secs))
+#secs = start.time_till(end)*1e-3
+#print('Time taken for GPU computations of second kernel is {0:.2e}s.\n'.format(secs))
+
 #### TRANSFER BACK (we won't need this later) ####
-start_transfer = time.time()
+#start_transfer = time.time()
 drv.memcpy_dtoh(sums, sums_gpu)
-pycuda.driver.stop_profiler()
-end_transfer = time.time()
+#pycuda.driver.stop_profiler()
+#end_transfer = time.time()
 
-print('Data transfer from device to host took {0:.2e}s.\n'.format(end_transfer -start_transfer))
+#print('Data transfer from device to host took {0:.2e}s.\n'.format(end_transfer -start_transfer))
 print('sums = \n', sums)

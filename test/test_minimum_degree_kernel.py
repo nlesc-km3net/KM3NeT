@@ -5,7 +5,7 @@ import numpy as np
 import os
 from nose.tools import nottest
 
-from .context import skip_if_no_cuda_device, get_kernel_path, create_plot
+from .context import skip_if_no_cuda_device, get_kernel_path, create_plot, get_full_matrix, generate_correlations_table
 
 from kernel_tuner import run_kernel
 
@@ -36,15 +36,7 @@ def test_minimum_degree_kernel():
     max_blocks = int(np.ceil(N / float(params["block_size_x"])))
 
     #generate input data with an expected density of correlated hits
-    correlations = np.random.randn(sliding_window_width, N)
-    correlations[correlations <= 2.2] = 0
-    correlations[correlations > 2.2] = 1
-    correlations = np.array(correlations.reshape(sliding_window_width, N), dtype=np.uint8)
-
-    #zero the triangle at the end of correlations table that can not contain any ones
-    for j in range(correlations.shape[0]):
-        for i in range(N-j-1, N):
-            correlations[j,i] = 0
+    correlations = generate_correlations_table(N, sliding_window_width, cutoff=2.2)
 
     #obtain full correlation matrix for reference
     dense_matrix = get_full_matrix(correlations)

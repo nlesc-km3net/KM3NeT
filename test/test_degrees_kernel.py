@@ -4,7 +4,7 @@ import numpy as np
 import os
 from nose.tools import nottest
 
-from .context import skip_if_no_cuda_device, get_kernel_path, create_plot
+from .context import skip_if_no_cuda_device, get_kernel_path, create_plot, generate_correlations_table
 
 from kernel_tuner import run_kernel
 
@@ -31,10 +31,7 @@ def test_degrees_kernel():
     problem_size = (N, 1)
 
     #generate input data with an expected density of correlated hits
-    correlations = np.random.randn(sliding_window_width, N)
-    correlations[correlations <= 2.87] = 0
-    correlations[correlations > 2.87] = 1
-    correlations = np.array(correlations.reshape(sliding_window_width, N), dtype=np.uint8)
+    correlations = generate_correlations_table(N, sliding_window_width, cutoff=2.87)
 
     #compute reference answer
     in_degree = in_degrees(correlations)

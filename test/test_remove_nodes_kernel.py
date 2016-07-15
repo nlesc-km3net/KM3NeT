@@ -5,26 +5,13 @@ import numpy as np
 import os
 from nose.tools import nottest
 
-from .context import skip_if_no_cuda_device, get_kernel_path, create_plot
+from .context import skip_if_no_cuda_device, get_kernel_path, create_plot, get_full_matrix, generate_correlations_table
 
 from kernel_tuner import run_kernel
 
 def test_remove_nodes_kernel():
 
     skip_if_no_cuda_device()
-
-    #obtain a true correlation matrix from the correlations table
-    def get_full_matrix(correlations):
-        n = correlations.shape[1]
-        matrix = np.zeros((n,n), dtype=np.uint8)
-        for i in range(n):
-            for j in range(correlations.shape[0]):
-                if correlations[j,i] == 1:
-                    col = i+j+1
-                    if col < n and col >= 0:
-                        matrix[i,col] = 1
-                        matrix[col,i] = 1
-        return matrix
 
     with open(get_kernel_path()+'remove_nodes.cu', 'r') as f:
         kernel_string = f.read()
@@ -35,15 +22,7 @@ def test_remove_nodes_kernel():
     params = { "block_size_x": 128 }
 
     #generate input data with an expected density of correlated hits
-    correlations = np.random.randn(sliding_window_width, N)
-    correlations[correlations <= 2.2] = 0
-    correlations[correlations > 2.2] = 1
-    correlations = np.array(correlations.reshape(sliding_window_width, N), dtype=np.uint8)
-
-    #zero the triangle at the end of correlations table that can not contain any ones
-    for j in range(correlations.shape[0]):
-        for i in range(N-j-1, N):
-            correlations[j,i] = 0
+    correlations = generate_correlations_table(N, sliding_window_width, cutoff=2.2)
 
     #obtain full correlation matrix for reference
     dense_matrix = get_full_matrix(correlations)

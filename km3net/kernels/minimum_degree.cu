@@ -115,17 +115,21 @@ __global__ void minimum_degree(int *minimum, int *num_nodes, int *degrees, int *
 __global__ void combine_blocked_min_num(int *minimum, int *num_nodes, int n) {
     int ti = threadIdx.x;
 
-    __shared__ int sh_min[block_size_x];
-    __shared__ int sh_sum[block_size_x];
+    if (ti < n) {
 
-    int lmin = minimum[ti];
-    int lnum = num_nodes[ti];
+        __shared__ int sh_min[block_size_x];
+        __shared__ int sh_sum[block_size_x];
 
-    reduce_min_num(sh_min, sh_sum, lmin, lnum, ti);
+        int lmin = minimum[ti];
+        int lnum = num_nodes[ti];
 
-    if (ti==0) {
-        minimum[0] = sh_min[0];
-        num_nodes[0] = sh_sum[0];
+        reduce_min_num(sh_min, sh_sum, lmin, lnum, ti);
+
+        if (ti==0) {
+            minimum[0] = sh_min[0];
+            num_nodes[0] = sh_sum[0];
+        }
+
     }
 
 }

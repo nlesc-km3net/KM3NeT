@@ -68,3 +68,30 @@ def test_prefix_sum_kernel():
     print(reference)
 
     assert test_result
+
+
+def test_propagate_block_carry():
+
+    with open(get_kernel_path()+'prefixsum.cu', 'r') as f:
+        kernel_string = f.read()
+
+    size = 1000
+    n = np.int32(size)
+
+    params = {"block_size_x": 256}
+    inputs = (np.random.rand(size)*100.0).astype(np.int32)
+    block_carry = (np.random.rand(size//params["block_size_x"]+1)*100.0).astype(np.int32)
+
+    args = [inputs, block_carry, n]
+    answer = run_kernel("propagate_block_carry", kernel_string, (size,1), args, params)
+
+    reference = inputs.copy()
+    bs = params["block_size_x"]
+    reference[:bs] = inputs[:bs]
+    reference[bs:] = [inputs[i] + block_carry[i//bs-1] for i in range(bs,size)]
+
+    print(block_carry)
+    print(answer[0])
+    print(reference)
+
+    assert all(answer[0] == reference)

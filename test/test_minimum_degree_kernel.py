@@ -85,3 +85,31 @@ def test_minimum_degree_kernel():
     print (degrees)
     assert all(answer[2] - degrees == 0)
 
+
+
+def test_combine_blocked_min_num():
+
+    with open(get_kernel_path()+'minimum_degree.cu', 'r') as f:
+        kernel_string = f.read()
+
+    size = 487
+    N = np.int32(size)
+
+    minimum = (np.random.rand(size)*10.0).astype(np.int32)
+    num_nodes = (np.random.rand(size)*10.0).astype(np.int32)
+
+    args = [minimum, num_nodes, N]
+
+    params = {"block_size_x": 512}
+    answer = run_kernel("combine_blocked_min_num", kernel_string, (size,1), args, params)
+
+    print(answer[0])
+    print(minimum)
+
+    assert answer[0][0] == np.ma.masked_equal(minimum, 0).min()
+
+    print(answer[1][0])
+    print(num_nodes.sum())
+
+    assert answer[1][0] == num_nodes.sum()
+

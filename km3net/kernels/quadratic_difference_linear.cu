@@ -7,7 +7,7 @@
 #endif
 
 #ifndef block_size_x
-  #define block_size_x 1
+  #define block_size_x 9
 #endif
 
 #ifndef block_size_y

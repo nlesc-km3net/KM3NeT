@@ -14,7 +14,6 @@ from test.context import skip_if_no_cuda_device, get_kernel_path
 skip_if_no_cuda_device()
 N = np.int32(27)
 sliding_window_width = np.int32(9)
-problem_size = (N, 1)
 
 #generate input data with an expected density of correlated hits
 x = np.random.normal(0.2, 0.1, N).astype(np.float32)
@@ -24,14 +23,16 @@ ct = 10*np.random.normal(0.5, 0.06, N).astype(np.float32)
 correlations = np.zeros((sliding_window_width, N), 'uint8')
 sums = np.zeros(N).astype(np.int32) # TODO: do we really need int32? 
 
-with open(get_kernel_path()+'quadratic_difference_linear.cu', 'r') as f:
+#### Load the kernels first
+with open(get_kernel_path() + 'quadratic_difference_linear.cu', 'r') as f:
     kernel_string = f.read()
+with open(get_kernel_path() + 'degrees.cu', 'r') as f:
+    kernel_string += "\n" + f.read()
 
 kernel_mod = SourceModule(kernel_string)
-# TODO: append other kernels to the string
 quadratic_difference_linear= kernel_mod.get_function("quadratic_difference_linear")
 
-#### MEMORY ALLOCATION ####
+#### Memory allocation ####
 start_malloc = time.time()
 
 pycuda.driver.start_profiler()
@@ -52,26 +53,20 @@ print("Number of bytes needed for the correlation matrix = {0:.3e} \n".format(co
 
 #### MEMORY TRANFER ####
 start_transfer = time.time()
-
 drv.memcpy_htod(x_gpu, x)
 drv.memcpy_htod(y_gpu, y)
 drv.memcpy_htod(z_gpu, z)
 drv.memcpy_htod(ct_gpu, ct)
-#drv.memcpy_htod(correlations_gpu, correlations)
-#drv.memcpy_htod(sums_gpu, sums)
 end_transfer = time.time()
 print('Data transfer from host to device took {0:.2e}s.\n'.format(end_transfer -start_transfer))
 
 
-
+#### RUN KERNEL quadratic_difference_linear ####
 block_size_x = 9
 block_size_y = 1
 gridx = int(np.ceil(correlations.shape[1]/block_size_x))
 gridy = int(1)
 
-
-#### RUN KERNEL quadratic_difference_linear ####
-# create two timers so we can speed-test each approach
 start = drv.Event()
 end = drv.Event()
 
@@ -94,7 +89,6 @@ print('Time taken for GPU computations of first kernel is {0:.2e}s.\n'.format(se
 #### TRANSFER BACK (we won't need this later) ####
 start_transfer = time.time()
 drv.memcpy_dtoh(correlations, correlations_gpu)
-# drv.memcpy_dtoh(sums, sums_gpu)
 pycuda.driver.stop_profiler()
 end_transfer = time.time()
 
@@ -102,12 +96,7 @@ print('Data transfer from device to host took {0:.2e}s.\n'.format(end_transfer -
 print('correlations = \n', correlations)
 
 ### SECOND KERNEL ####
-with open(get_kernel_path()+'degrees.cu', 'r') as f:
-    kernel_string = f.read()
-
-degrees_mod = SourceModule(kernel_string)
-degrees_dense = degrees_mod.get_function("degrees_dense")
-
+degrees_dense = kernel_mod.get_function("degrees_dense")
 #### RUN KERNEL degrees ####
 start.record() # start timing
 degrees_dense(

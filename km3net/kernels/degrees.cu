@@ -18,9 +18,13 @@
  */
 
 #ifndef window_width
-#define window_width 1500
+#define window_width 9
 #endif
 
+
+#ifndef block_size_x
+#define block_size_x 9
+#endif
 
 
 __global__ void degrees_dense(int *degree, uint8_t *correlations, int n) {

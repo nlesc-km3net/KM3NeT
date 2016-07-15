@@ -21,13 +21,15 @@ x = np.random.normal(0.2, 0.1, N).astype(np.float32)
 y = np.random.normal(0.2, 0.1, N).astype(np.float32)
 z = np.random.normal(0.2, 0.1, N).astype(np.float32)
 ct = 10*np.random.normal(0.5, 0.06, N).astype(np.float32)
+correlations = np.zeros((sliding_window_width, N), 'uint8')
 sums = np.zeros(N).astype(np.int32)
 
 with open(get_kernel_path()+'quadratic_difference_linear.cu', 'r') as f:
     kernel_string = f.read()
 
+kernel_mod = SourceModule(kernel_string)
 # TODO: append other kernels to the string
-quadratic_difference_linear= kernel_string.get_function("quadratic_difference_linear")
+quadratic_difference_linear= kernel_mod.get_function("quadratic_difference_linear")
 
 #### MEMORY ALLOCATION ####
 start_malloc = time.time()
@@ -38,8 +40,6 @@ y_gpu = drv.mem_alloc(y.nbytes)
 z_gpu = drv.mem_alloc(z.nbytes)
 ct_gpu = drv.mem_alloc(ct.nbytes)
 sums_gpu = drv.mem_alloc(sums.nbytes)
-
-correlations = np.zeros((sliding_window_width, N), 'uint8')
 correlations_gpu = drv.mem_alloc(correlations.nbytes)
 end_malloc = time.time()
 

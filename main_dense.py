@@ -54,7 +54,7 @@ drv.memcpy_htod(x_gpu, x)
 drv.memcpy_htod(y_gpu, y)
 drv.memcpy_htod(z_gpu, z)
 drv.memcpy_htod(ct_gpu, ct)
-
+drv.memcpy_htod(correlations_gpu, correlations)
 end_transfer = time.time()
 print('Data transfer from host to device took {0:.2e}s.\n'.format(end_transfer -start_transfer))
 

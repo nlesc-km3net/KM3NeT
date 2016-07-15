@@ -84,7 +84,7 @@ end.record() # end timing
 end.synchronize()
 
 secs = start.time_till(end)*1e-3
-print('Time taken for GPU computations is {0:.2e}s.\n'.format(secs))
+print('Time taken for GPU computations of first kernel is {0:.2e}s.\n'.format(secs))
 
 
 #### TRANSFER BACK (we won't need this later) ####
@@ -97,3 +97,30 @@ end_transfer = time.time()
 print('Data transfer from device to host took {0:.2e}s.\n'.format(end_transfer -start_transfer))
 print('correlations = \n', correlations)
 
+### SECOND KERNEL ####
+with open(get_kernel_path()+'degrees.cu', 'r') as f:
+    kernel_string = f.read()
+
+degrees_mod = SourceModule(kernel_string)
+degrees_dense = degrees_mod.get_function("degrees_dense")
+
+#### RUN KERNEL degrees ####
+start.record() # start timing
+degrees_dense(
+        sums_gpu, correlations_gpu, N,
+        block=(block_size_x, block_size_y, 1), grid=(gridx, gridy))
+pycuda.autoinit.context.synchronize()
+
+end.record() # end timing
+end.synchronize()
+
+secs = start.time_till(end)*1e-3
+print('Time taken for GPU computations of second kernel is {0:.2e}s.\n'.format(secs))
+#### TRANSFER BACK (we won't need this later) ####
+start_transfer = time.time()
+drv.memcpy_dtoh(sums, sums_gpu)
+pycuda.driver.stop_profiler()
+end_transfer = time.time()
+
+print('Data transfer from device to host took {0:.2e}s.\n'.format(end_transfer -start_transfer))
+print('sums = \n', sums)

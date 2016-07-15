@@ -20,9 +20,9 @@ def create_plot(corr1, corr2):
     try:
         from matplotlib import pyplot
         f, (ax1, ax2, ax3) = pyplot.subplots(nrows=3, ncols=1, sharex=True, sharey=True)
-        ax1.imshow(corr1, cmap=pyplot.cm.bone)
-        ax2.imshow(corr2, cmap=pyplot.cm.bone)
-        ax3.imshow(corr2-corr1, cmap=pyplot.cm.jet)
+        ax1.imshow(corr1, cmap=pyplot.cm.bone, interpolation='nearest')
+        ax2.imshow(corr2, cmap=pyplot.cm.bone, interpolation='nearest')
+        ax3.imshow(corr2-corr1, cmap=pyplot.cm.jet, interpolation='nearest')
         pyplot.show()
     except:
         pass

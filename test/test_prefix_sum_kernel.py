@@ -15,16 +15,16 @@ def test_prefix_sum_kernel():
     with open(get_kernel_path()+'prefixsum.cu', 'r') as f:
         kernel_string = f.read()
 
-    size = 1024
+    size = 256
     problem_size = (size, 1)
-    params = {"block_size_x": 256}
-    max_blocks = 1024/params["block_size_x"]
+    params = {"block_size_x": 128}
+    max_blocks = size/params["block_size_x"]
     x = np.ones(size).astype(np.int32)
 
     #compute reference answer
     reference = np.cumsum(x)
 
-    #call the CUDA kernel
+    #setup kernel inputs
     prefix_sums = np.zeros(size).astype(np.int32)
     block_carry = np.zeros(max_blocks).astype(np.int32)
     n = np.int32(size)
@@ -62,13 +62,9 @@ def test_prefix_sum_kernel():
     #verify
     test_result = np.sum(answer[0] - reference) == 0
 
-    print(answer[0].shape)
-    print(reference.shape)
-
-    if not test_result == True:
-        print("answer:")
-        print(answer[0])
-        print("reference:")
-        print(reference)
+    print("answer")
+    print(answer[0])
+    print("reference")
+    print(reference)
 
     assert test_result

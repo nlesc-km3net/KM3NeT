@@ -9,7 +9,7 @@ from .context import skip_if_no_cuda_device, get_kernel_path, create_plot
 
 from kernel_tuner import run_kernel
 
-def test_dense2sparse_kernel():
+def test_minimum_degree_kernel():
 
     skip_if_no_cuda_device()
 
@@ -37,8 +37,6 @@ def test_dense2sparse_kernel():
 
     #generate input data with an expected density of correlated hits
     correlations = np.random.randn(sliding_window_width, N)
-    #correlations[correlations <= 2.87] = 0
-    #correlations[correlations > 2.87] = 1
     correlations[correlations <= 2.2] = 0
     correlations[correlations > 2.2] = 1
     correlations = np.array(correlations.reshape(sliding_window_width, N), dtype=np.uint8)
@@ -59,9 +57,10 @@ def test_dense2sparse_kernel():
     col_idx = (sparse_matrix.nonzero()[1]).astype(np.int32)
     minimum = np.zeros(max_blocks).astype(np.int32)
     num_nodes = np.zeros(max_blocks).astype(np.int32)
+    input_degrees = degrees + (np.random.rand(degrees.size)*10.0).astype(np.int32)
 
     #call the CUDA kernel
-    args = [minimum, num_nodes, np.zeros_like(degrees), row_idx, col_idx, prefix_sums, N]
+    args = [minimum, num_nodes, input_degrees, row_idx, col_idx, prefix_sums, N]
     answer = run_kernel("minimum_degree", kernel_string, problem_size, args, params)
 
     #verify all kernel outputs

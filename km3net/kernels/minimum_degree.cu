@@ -4,6 +4,37 @@
 #endif
 
 
+
+/*
+ * Helper function that does the reduction step of the algorithm
+ *
+ * This function reduces the values in a thread block to a single value
+ *
+ */
+__device__ __forceinline__ void reduce_min_num(int *sh_min, int *sh_sum, int lmin, int lnum, int ti) {
+    sh_min[ti] = lmin;
+    sh_sum[ti] = lnum;
+    __syncthreads();
+    #pragma unroll
+    for (unsigned int s=block_size_x/2; s>0; s>>=1) {
+        if (ti < s) {
+            int self = sh_min[ti];
+            int other = sh_min[ti+s];
+            if (other > 0) {
+                if (self == 0 || other < self) {
+                    sh_min[ti] = other;
+                }
+            }
+            sh_sum[ti] += sh_sum[ti+s];
+        }
+        __syncthreads();
+    }
+}
+
+
+
+
+
 /*
  * This kernel recomputes the degree of each node in the graph and computes
  * the minimum degree of all nodes with at least one edge.
@@ -42,9 +73,11 @@ __global__ void minimum_degree(int *minimum, int *num_nodes, int *degrees, int *
         }
         int end = prefix_sum[i];
 
+        int max_degree = degrees[i];
+
         //get the degree of this node
         int degree = 0;
-        for (int k=start; k<end; k++) {
+        for (int k=start; k<end && degree < max_degree; k++) {
             if (col_idx[k] != -1) {
                 degree++;
             }
@@ -58,24 +91,7 @@ __global__ void minimum_degree(int *minimum, int *num_nodes, int *degrees, int *
         //and the total number of nodes with degree > 0 (at least 1 edge)
         __shared__ int sh_min[block_size_x];
         __shared__ int sh_sum[block_size_x];
-
-        sh_min[ti] = degree;
-        sh_sum[ti] = degree > 0 ? 1 : 0;
-        __syncthreads();
-        #pragma unroll
-        for (unsigned int s=block_size_x/2; s>0; s>>=1) {
-            if (ti < s) {
-                int self = sh_min[ti];
-                int other = sh_min[ti+s];
-                if (other > 0) {
-                    if (self == 0 || other < self) {
-                        sh_min[ti] = other;
-                    }
-                }
-                sh_sum[ti] += sh_sum[ti+s];
-            }
-            __syncthreads();
-        }
+        reduce_min_num(sh_min, sh_sum, degree, degree > 0 ? 1 : 0, ti);
 
         //write output
         if (ti == 0) {
@@ -85,4 +101,31 @@ __global__ void minimum_degree(int *minimum, int *num_nodes, int *degrees, int *
 
 
     }
+}
+
+
+
+
+
+/*
+ * Helper kernel to combine per-thread block results into single values
+ *
+ * call with 1 thread block, block_size_x should be sufficiently large
+ */
+__global__ void combine_blocked_min_num(int *minimum, int *num_nodes, int n) {
+    int ti = threadIdx.x;
+
+    __shared__ int sh_min[block_size_x];
+    __shared__ int sh_sum[block_size_x];
+
+    int lmin = minimum[ti];
+    int lnum = num_nodes[ti];
+
+    reduce_min_num(sh_min, sh_sum, lmin, lnum, ti);
+
+    if (ti==0) {
+        minimum[0] = sh_min[0];
+        num_nodes[0] = sh_sum[0];
+    }
+
 }

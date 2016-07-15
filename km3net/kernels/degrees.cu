@@ -37,8 +37,20 @@ __global__ void degrees_dense(int *degree, uint8_t *correlations, int n) {
             if (col >= 0 && correlations[pos] == 1) {
                 in_degree++;
             }
+
+           // perhaps this leads to more irregular access patterns than looping separately like below?
+           // int pos1 = j * n + i;
+           // if(correlations[pos1] == 1){
+           //     in_degree++;
+           // }
         }
 
+        for (int j=0; j<window_width; j++){
+            int pos = j * n + i;
+            if(correlations[pos] == 1){
+                in_degree++;
+            }
+        }
         //could implement a cutoff here to remove all nodes with degree less than some threshold
 
         degree[i] += in_degree;   //already contains the out-degree, simply add the in-degree

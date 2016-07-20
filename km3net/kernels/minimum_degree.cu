@@ -1,6 +1,6 @@
 
 #ifndef block_size_x
-#define block_size_x 256
+#define block_size_x 128
 #endif
 
 
@@ -25,7 +25,7 @@ __device__ __forceinline__ void reduce_min_num(int *sh_min, int *sh_sum, int lmi
                     sh_min[ti] = other;
                 }
             }
-            sh_sum[ti] += sh_sum[ti+s];
+            sh_sum[ti] += sh_sum[ti + s];
         }
         __syncthreads();
     }
@@ -64,6 +64,8 @@ __global__ void minimum_degree(int *minimum, int *num_nodes, int *degrees, int *
     int ti = threadIdx.x;
     int i = blockIdx.x * block_size_x + ti;
 
+    int degree = 0;
+
     if (i<n) {
 
         //obtain indices for reading col_idx
@@ -76,7 +78,6 @@ __global__ void minimum_degree(int *minimum, int *num_nodes, int *degrees, int *
         int max_degree = degrees[i];
 
         //get the degree of this node
-        int degree = 0;
         for (int k=start; k<end && degree < max_degree; k++) {
             if (col_idx[k] != -1) {
                 degree++;
@@ -85,22 +86,28 @@ __global__ void minimum_degree(int *minimum, int *num_nodes, int *degrees, int *
 
         //update degrees array
         degrees[i] = degree;
-
-        //start the reduce
-        //get the minimum value larger than 0
-        //and the total number of nodes with degree > 0 (at least 1 edge)
-        __shared__ int sh_min[block_size_x];
-        __shared__ int sh_sum[block_size_x];
-        reduce_min_num(sh_min, sh_sum, degree, degree > 0 ? 1 : 0, ti);
-
-        //write output
-        if (ti == 0) {
-            minimum[blockIdx.x] = sh_min[0];
-            num_nodes[blockIdx.x] = sh_sum[0];
-        }
-
-
     }
+
+    //start the reduce
+    //get the minimum value larger than 0
+    //and the total number of nodes with degree > 0 (at least 1 edge)
+    __shared__ int sh_min[block_size_x];
+    __shared__ int sh_sum[block_size_x];
+    sh_min[ti] = 0;
+    sh_sum[ti] = 0;
+
+    int lnum = 0;
+    if (degree > 0) {
+        lnum = 1;
+    }
+    reduce_min_num(sh_min, sh_sum, degree, lnum, ti);
+
+    //write output
+    if (ti == 0) {
+        minimum[blockIdx.x] = sh_min[0];
+        num_nodes[blockIdx.x] = sh_sum[0];
+    }
+
 }
 
 
@@ -115,21 +122,23 @@ __global__ void minimum_degree(int *minimum, int *num_nodes, int *degrees, int *
 __global__ void combine_blocked_min_num(int *minimum, int *num_nodes, int n) {
     int ti = threadIdx.x;
 
+
+    __shared__ int sh_min[block_size_x];
+    __shared__ int sh_sum[block_size_x];
+
+    int lmin = 0;
+    int lnum = 0;
+
     if (ti < n) {
+        lmin = minimum[ti];
+        lnum = num_nodes[ti];
+    }
 
-        __shared__ int sh_min[block_size_x];
-        __shared__ int sh_sum[block_size_x];
+    reduce_min_num(sh_min, sh_sum, lmin, lnum, ti);
 
-        int lmin = minimum[ti];
-        int lnum = num_nodes[ti];
-
-        reduce_min_num(sh_min, sh_sum, lmin, lnum, ti);
-
-        if (ti==0) {
-            minimum[0] = sh_min[0];
-            num_nodes[0] = sh_sum[0];
-        }
-
+    if (ti==0) {
+        minimum[0] = sh_min[0];
+        num_nodes[0] = sh_sum[0];
     }
 
 }

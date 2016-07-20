@@ -2,7 +2,7 @@
 
 
 #ifndef block_size_x
-#define block_size_x 256
+#define block_size_x 128
 #endif
 
 

@@ -2,10 +2,8 @@ from __future__ import print_function
 
 from scipy.sparse import csr_matrix
 import numpy as np
-import os
-from nose.tools import nottest
 
-from .context import skip_if_no_cuda_device, get_kernel_path, create_plot, get_full_matrix, generate_correlations_table
+from .context import skip_if_no_cuda_device, get_kernel_path, get_full_matrix, generate_correlations_table
 
 from kernel_tuner import run_kernel
 
@@ -13,26 +11,13 @@ def test_minimum_degree_kernel():
 
     skip_if_no_cuda_device()
 
-    #obtain a true correlation matrix from the correlations table
-    def get_full_matrix(correlations):
-        n = correlations.shape[1]
-        matrix = np.zeros((n,n), dtype=np.uint8)
-        for i in range(n):
-            for j in range(correlations.shape[0]):
-                if correlations[j,i] == 1:
-                    col = i+j+1
-                    if col < n and col >= 0:
-                        matrix[i,col] = 1
-                        matrix[col,i] = 1
-        return matrix
-
     with open(get_kernel_path()+'minimum_degree.cu', 'r') as f:
         kernel_string = f.read()
 
     N = np.int32(300)
     sliding_window_width = np.int32(150)
     problem_size = (N, 1)
-    params = { "block_size_x": 128 }
+    params = { "block_size_x": 128, "threshold": 1 }
     max_blocks = int(np.ceil(N / float(params["block_size_x"])))
 
     #generate input data with an expected density of correlated hits
@@ -100,8 +85,8 @@ def test_combine_blocked_min_num():
 
     args = [minimum, num_nodes, N]
 
-    params = {"block_size_x": 512}
-    answer = run_kernel("combine_blocked_min_num", kernel_string, (size,1), args, params)
+    params = { "block_size_x": 512, "threshold": 1 }
+    answer = run_kernel("combine_blocked_min_num", kernel_string, (1,1), args, params)
 
     print(answer[0])
     print(minimum)

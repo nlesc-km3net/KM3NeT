@@ -2,10 +2,8 @@ from __future__ import print_function
 
 from scipy.sparse import csr_matrix
 import numpy as np
-import os
-from nose.tools import nottest
 
-from .context import skip_if_no_cuda_device, get_kernel_path, create_plot, get_full_matrix, generate_correlations_table
+from .context import skip_if_no_cuda_device, get_kernel_path, get_full_matrix, generate_correlations_table
 
 from kernel_tuner import run_kernel
 

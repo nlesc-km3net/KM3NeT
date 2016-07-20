@@ -6,16 +6,16 @@
   #define tile_size_x 1
 #endif
 
+#ifndef block_size_x
+  #define block_size_x 512
+#endif
+
 #ifndef block_size_y
   #define block_size_y 1
 #endif
 
 #ifndef window_width
 #define window_width 1500
-#endif
-
-#ifndef tile_size_x
-#define tile_size_x 1
 #endif
 
 #define USE_READ_ONLY_CACHE read_only

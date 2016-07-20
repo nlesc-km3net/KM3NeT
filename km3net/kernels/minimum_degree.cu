@@ -3,6 +3,10 @@
 #define block_size_x 128
 #endif
 
+#ifndef threshold
+#define threshold 3
+#endif
+
 
 
 /*
@@ -20,8 +24,8 @@ __device__ __forceinline__ void reduce_min_num(int *sh_min, int *sh_sum, int lmi
         if (ti < s) {
             int self = sh_min[ti];
             int other = sh_min[ti+s];
-            if (other > 0) {
-                if (self == 0 || other < self) {
+            if (other >= threshold) {
+                if (self < threshold || other < self) {
                     sh_min[ti] = other;
                 }
             }
@@ -41,10 +45,10 @@ __device__ __forceinline__ void reduce_min_num(int *sh_min, int *sh_sum, int lmi
  *
  * output arguments:
  *
- *  minimum an array which will contain a per-thread block minimum degree
+ *  minimum an array containing a per-thread block minimum degree
  *
  *  num_nodes will contain the per-thread block sum of the number of nodes
- *      with at least 1 edge
+ *      with at least 'threshold' edges
  *
  *  degrees contains the degree of all nodes and is updated with the current degree
  *
@@ -90,14 +94,11 @@ __global__ void minimum_degree(int *minimum, int *num_nodes, int *degrees, int *
 
     //start the reduce
     //get the minimum value larger than 0
-    //and the total number of nodes with degree > 0 (at least 1 edge)
+    //and the total number of nodes with degree >= theshold (at least 'threshold' edges)
     __shared__ int sh_min[block_size_x];
     __shared__ int sh_sum[block_size_x];
-    sh_min[ti] = 0;
-    sh_sum[ti] = 0;
-
     int lnum = 0;
-    if (degree > 0) {
+    if (degree >= threshold) {
         lnum = 1;
     }
     reduce_min_num(sh_min, sh_sum, degree, lnum, ti);

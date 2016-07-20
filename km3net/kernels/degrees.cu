@@ -21,8 +21,6 @@
 #define window_width 1500
 #endif
 
-
-
 __global__ void degrees_dense(int *degree, uint8_t *correlations, int n) {
 
     //node id for which this thread is responsible
@@ -41,7 +39,8 @@ __global__ void degrees_dense(int *degree, uint8_t *correlations, int n) {
 
         //could implement a cutoff here to remove all nodes with degree less than some threshold
 
-        degree[i] += in_degree;   //already contains the out-degree, simply add the in-degree
+        //already contains the out-degree, simply add the in-degree
+        degree[i] += in_degree;
     }
 }
 

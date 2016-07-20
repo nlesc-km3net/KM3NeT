@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 import numpy as np
-from nose.tools import nottest
 
 from .context import skip_if_no_cuda_device, get_kernel_path, create_plot
 

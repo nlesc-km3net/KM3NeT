@@ -2,15 +2,13 @@ from __future__ import print_function
 
 from scipy.sparse import csr_matrix
 import numpy as np
-import os
-from nose.tools import nottest
 
-from .context import skip_if_no_cuda_device, get_kernel_path, create_plot, get_full_matrix, generate_correlations_table
+from .context import skip_if_no_cuda_device, get_kernel_path, get_full_matrix, generate_correlations_table
 
 import pycuda.driver as drv
 from pycuda.compiler import SourceModule
 
-def test_remove_nodes_kernel():
+def test_sparse_purging_kernel():
 
     skip_if_no_cuda_device()
 
@@ -19,8 +17,9 @@ def test_remove_nodes_kernel():
         clique_indices = sorted((np.random.rand(clique_size) * float(sliding_window_width)).astype(np.int))
         #shift it to somewhere in the middle
         clique_indices += sliding_window_width
+        clique_indices = np.unique(clique_indices)
         #may contain the same index multiple times, reduce clique_size if needed
-        clique_size = len(set(clique_indices))
+        clique_size = len(clique_indices)
         for i in clique_indices:
             for j in clique_indices:
                 dense_matrix[i,j] = 1
@@ -59,8 +58,8 @@ def test_remove_nodes_kernel():
     threads = (params["block_size_x"], 1, 1)
     grid = (int(max_blocks), 1)
 
-    #generate input data with a very low density of correlated hits
-    correlations = generate_correlations_table(N, sliding_window_width, cutoff=2.87)
+    #generate input data with a relatively high density of correlated hits
+    correlations = generate_correlations_table(N, sliding_window_width, cutoff=2.0)
 
     #obtain full correlation matrix for reference
     dense_matrix = get_full_matrix(correlations)
@@ -68,14 +67,14 @@ def test_remove_nodes_kernel():
     #insert a clique in the test data
     dense_matrix, clique_indices, clique_size = insert_clique(dense_matrix, sliding_window_width, 12)
 
-    #create sparse matrix
-    sparse_matrix = csr_matrix(dense_matrix)
-
     #setup all kernel inputs
     degrees = dense_matrix.sum(axis=0).astype(np.int32)
     prefix_sums = np.cumsum(degrees).astype(np.int32)
+    sparse_matrix = csr_matrix(dense_matrix)
+
     row_idx = (sparse_matrix.nonzero()[0]).astype(np.int32)
     col_idx = (sparse_matrix.nonzero()[1]).astype(np.int32)
+
     minimum = np.zeros(max_blocks).astype(np.int32)
     num_nodes = np.zeros(max_blocks).astype(np.int32)
 
@@ -131,6 +130,9 @@ def test_remove_nodes_kernel():
         args = [d_degrees, d_row_idx, d_col_idx, d_prefix_sums, d_minimum, N]
         remove_nodes(*args, block=threads, grid=grid)
 
+        drv.memcpy_dtoh(degrees, d_degrees)
+        print(degrees)
+
         args = [d_minimum, d_num_nodes, d_degrees, d_row_idx, d_col_idx, d_prefix_sums, N]
         minimum_degree(*args, block=threads, grid=grid)
 
@@ -158,7 +160,7 @@ def test_remove_nodes_kernel():
     drv.memcpy_dtoh(degrees, d_degrees)
     print(degrees)
     indices = np.array(range(degrees.size))
-    found_indices = indices[degrees > 0]
+    found_indices = indices[degrees >= current_minimum]
     print(found_indices)
 
     context.pop()

@@ -16,7 +16,7 @@ def test_prefix_sum_kernel():
     size = 256
     problem_size = (size, 1)
     params = {"block_size_x": 128}
-    max_blocks = size/params["block_size_x"]
+    max_blocks = size//params["block_size_x"]
     x = np.ones(size).astype(np.int32)
 
     #compute reference answer
@@ -66,6 +66,48 @@ def test_prefix_sum_kernel():
     print(reference)
 
     assert test_result
+
+
+
+def test_prefix_sum_single_block():
+
+    skip_if_no_cuda_device()
+
+    with open(get_kernel_path()+'prefixsum.cu', 'r') as f:
+        kernel_string = f.read()
+
+    size = 487
+    problem_size = (size, 1)
+    params = {"block_size_x": 128}
+    max_blocks = size//params["block_size_x"]
+    x = np.ones(size).astype(np.int32)
+
+    #compute reference answer
+    reference = np.cumsum(x)
+
+    #setup kernel inputs
+    prefix_sums = np.zeros(size).astype(np.int32)
+    block_carry = np.zeros(max_blocks).astype(np.int32)
+    n = np.int32(size)
+
+    args = [prefix_sums, block_carry, x, n]
+
+    #call the first kernel that computes the incomplete prefix sums
+    #and outputs the block carry values
+    answer = run_kernel("prefix_sum_single_block", kernel_string, (1,1), args, params)
+
+    #verify
+    test_result = np.sum(answer[0] - reference) == 0
+
+    print("answer")
+    print(answer[0])
+    print("reference")
+    print(reference)
+
+    assert test_result
+
+
+
 
 
 def test_propagate_block_carry():

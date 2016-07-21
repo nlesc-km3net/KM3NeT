@@ -109,6 +109,69 @@ __global__ void prefix_sum_block(int *prefix_sums, int *block_carry, int *input,
 
 
 /*
+ * Helper kernel for computing the prefix sums over the block carry
+ * values, it executes on small problems and can therefore do with
+ * only one thread block
+ */
+__global__ void prefix_sum_single_block(int *prefix_sums, int *block_carry, int *input, int n) {
+    int tx = threadIdx.x;
+    int x = blockIdx.x * block_size_x + tx;
+
+    __shared__ int block_carry_value[1];
+    if (tx == 0) {
+        block_carry_value[0] = 0;
+    }
+
+    int total_n = blockDim.x * block_size_x;
+    for (int k=x; k<total_n; k+=block_size_x) {
+        int v = 0;
+        if (k < n) {
+            v = input[k];
+        }
+
+        v = prefix_sum_warp(v, 32);
+
+        #if block_size_x > 32
+        int laneid = tx & (32-1);
+        int warpid = tx / 32;
+
+        __shared__ int warp_carry[block_size_x/32];
+        if (laneid == 31) {
+            warp_carry[warpid] = v;
+        }
+        __syncthreads();
+
+        if (tx < block_size_x/32) {
+            int temp = warp_carry[tx];
+            temp = prefix_sum_warp(temp, block_size_x/32);
+            warp_carry[tx] = temp;
+        }
+        __syncthreads();
+
+        if (warpid>0) {
+            v += warp_carry[warpid-1];
+        }
+        #endif
+
+        if (k < n) {
+            prefix_sums[k] = v + block_carry_value[0];
+        }
+
+        if (tx == block_size_x-1) {
+            block_carry_value[0] += v;
+        }
+    }
+
+}
+
+
+
+
+
+
+
+
+/*
  * This is a simple kernel that can be used to propagate block carry
  * values to all previously computed block-wide prefix sums.
  */

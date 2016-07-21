@@ -55,6 +55,8 @@ def test_dense2sparse_kernel():
     #if number of non zero elements is zero, i.e. matrix is empty
     diff = reference - answer
     test_result = diff.nnz == 0
+    print("diff")
+    print(diff)
 
     #verify
     if not test_result == True:

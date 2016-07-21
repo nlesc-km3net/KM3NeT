@@ -8,6 +8,10 @@
 #define window_width 1500
 #endif
 
+#ifndef write_rows
+#define write_rows 1
+#endif 
+
 /*
  * This kernel creates a sparse representation of the densely stored correlations table.
  *
@@ -20,11 +24,10 @@
  * the correlated hits.
  *
  */
-__global__ void dense2sparse_kernel(int *row_idx, int *col_idx, int *prefix_sums, uint8_t *correlations, int n) {
+__global__ void dense2sparse_kernel(int *row_idx, int *__restrict__ col_idx, int *__restrict__ prefix_sums, uint8_t * correlations, int n) {
     int i = blockIdx.x * block_size_x + threadIdx.x;
 
     if (i<n) {
-
         //get the offset to where output should be written
         int offset = 0;
         if (i>0) {
@@ -35,21 +38,62 @@ __global__ void dense2sparse_kernel(int *row_idx, int *col_idx, int *prefix_sums
         //int end = prefix_sums[i];
 
         //collect the edges to nodes with lower id
-        for (int j=window_width-1; j>=0; j--) {
-            int col = i - j - 1;
-            uint64_t pos = (j * (uint64_t)n) + (uint64_t)col;
-            if (col >= 0 && correlations[pos] == 1) {
-                row_idx[offset] = i;
-                col_idx[offset] = col;
-                offset += 1;
+        if (i<window_width) {
+            for (int j=i-1; j>=0; j--) {
+                int col = i-j-1;
+                uint64_t pos = (j * (uint64_t)n) + (uint64_t) (col);
+                if (correlations[pos] == 1) {
+                    #if write_rows
+                    row_idx[offset] = i;
+                    #endif
+                    col_idx[offset] = col;
+                    offset += 1;
+                }
+            }
+        } else {
+            #if f_unroll == 2
+            #pragma unroll 2
+            #elif f_unroll == 3
+            #pragma unroll 3
+            #elif f_unroll == 4
+            #pragma unroll 4
+            #elif f_unroll == 5
+            #pragma unroll 5
+            #elif f_unroll == 6
+            #pragma unroll 6
+            #endif
+            for (int j=window_width-1; j>=0; j--) {
+                int col = i-j-1;
+                uint64_t pos = (j * (uint64_t)n) + (uint64_t) (col);
+                if (correlations[pos] == 1) {
+                    #if write_rows
+                    row_idx[offset] = i;
+                    #endif
+                    col_idx[offset] = col;
+                    offset += 1;
+                }
             }
         }
 
+
         //collect the edges to nodes with higher id
+        #if f_unroll == 2
+        #pragma unroll 2
+        #elif f_unroll == 3
+        #pragma unroll 3
+        #elif f_unroll == 4
+        #pragma unroll 4
+        #elif f_unroll == 5
+        #pragma unroll 5
+        #elif f_unroll == 6
+        #pragma unroll 6
+        #endif
         for (int j=0; j<window_width; j++) {
             uint64_t pos = (j * (uint64_t)n) + (uint64_t)i;
             if (correlations[pos] == 1) {
+                #if write_rows
                 row_idx[offset] = i;
+                #endif
                 col_idx[offset] = i+j+1;
                 offset += 1;
             }
@@ -58,3 +102,4 @@ __global__ void dense2sparse_kernel(int *row_idx, int *col_idx, int *prefix_sums
 
     }
 }
+

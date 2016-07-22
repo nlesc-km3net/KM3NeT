@@ -25,7 +25,7 @@ __global__ void degrees_dense(int *degree, uint8_t *correlations, int n) {
 
         for (int j=window_width-1; j>=0; j--) {
             int col = i - j -1;
-            int pos = j * n + col;
+            uint64_t pos = (j * (uint64_t)n) + (uint64_t)col;
             if (col >= 0 && correlations[pos] == 1) {
                 in_degree++;
             }
@@ -38,7 +38,7 @@ __global__ void degrees_dense(int *degree, uint8_t *correlations, int n) {
         }   
 
         for (int j=0; j<window_width; j++){
-            int pos = j * n + i;
+            uint64_t pos = (j * (uint64_t)n) + (uint64_t)i;
             if(correlations[pos] == 1){
                 in_degree++;
             }

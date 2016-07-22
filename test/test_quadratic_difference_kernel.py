@@ -21,22 +21,34 @@ def test_quadratic_difference_kernel():
                        check[j - i - 1, i] = 1
         return check
 
-    with open(get_kernel_path()+'quadratic_difference_linear.cu', 'r') as f:
-        kernel_string = f.read()
 
-    N = np.int32(4.5e3)
-    sliding_window_width = np.int32(150)
+    N = np.int32(4.5e4)
+    sliding_window_width = np.int32(1500)
     problem_size = (N, 1)
 
     #generate input data with an expected density of correlated hits
     x = np.random.normal(0.2, 0.1, N).astype(np.float32)
     y = np.random.normal(0.2, 0.1, N).astype(np.float32)
     z = np.random.normal(0.2, 0.1, N).astype(np.float32)
-    ct = 1000*np.random.normal(0.5, 0.06, N).astype(np.float32)
+    ct = np.random.normal(0.5, 0.06, N).astype(np.float32)
 
     correlations_ref = np.zeros((sliding_window_width, N), 'uint8')
     correlations = np.zeros((sliding_window_width, N), 'uint8')
     sums = np.zeros(N).astype(np.int32)
+
+    with open(get_kernel_path() + 'headers.cu', 'r') as f:
+        kernel_string = f.read()
+
+    kernel_string = kernel_string % \
+                {'tile_size_x_qd':1,
+                 'block_size_x_qd': 256,
+                 'block_size_y_qd':1,
+                 'window_width':sliding_window_width,
+                 'write_sums_qd':0,
+                 'block_size_x_d': 256}
+
+    with open(get_kernel_path()+'quadratic_difference_linear.cu', 'r') as f:
+        kernel_string += f.read()
 
     args = [correlations, sums, N, sliding_window_width, x, y, z, ct]
 

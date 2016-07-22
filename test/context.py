@@ -48,6 +48,6 @@ def correlations_cpu(check, x, y, z, ct):
     for i in range(check.shape[1]):
         for j in range(i + 1, i + check.shape[0] + 1):
             if j < check.shape[1]:
-                if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
+                  if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
                    check[j - i - 1, i] = 1
     return check

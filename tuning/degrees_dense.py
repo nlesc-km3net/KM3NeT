@@ -13,8 +13,8 @@ def tune_degrees_dense():
     with open(get_kernel_path()+'degrees.cu', 'r') as f:
         kernel_string = f.read()
 
-    N = np.int32(400)
-    sliding_window_width = np.int32(150)
+    N = np.int32(4.5e6)
+    sliding_window_width = np.int32(1500)
     problem_size = (N, 1)
 
     #generate input data with an expected density of correlated hits
@@ -32,7 +32,7 @@ def tune_degrees_dense():
     #setup tuning parameters
     tune_params = OrderedDict()
     tune_params["block_size_x"] = [2**i for i in range(5,11)]
-    tune_params["window_width"] = [1500]
+    tune_params["window_width"] = [sliding_window_width]
 
     args = [sums, correlations, N]
     return tune_kernel("degrees_dense", kernel_string, problem_size, args, tune_params, verbose=True)

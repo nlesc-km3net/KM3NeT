@@ -33,7 +33,7 @@ def test_dense2sparse_kernel():
 
     #call the CUDA kernel
     args = [row_idx, col_idx, prefix_sums, correlations, N]
-    params = { "block_size_x": 256, 'window_width': sliding_window_width }
+    params = { "block_size_x": 256, 'window_width': sliding_window_width, "use_shared": 1 }
     answer = run_kernel("dense2sparse_kernel", kernel_string, problem_size, args, params)
 
     row_idx = answer[0]

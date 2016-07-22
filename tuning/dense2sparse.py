@@ -30,7 +30,8 @@ def tune_dense2sparse():
     tune_params = OrderedDict()
     tune_params["block_size_x"] = [32*i for i in range(1,33)] #factors of 32 up to 1024
     tune_params["window_width"] = [sliding_window_width]
-    tune_params["f_unroll"] = [i for i in range(1,7) if 1500/float(i) == 1500//i] #divisors of 1500
+    tune_params["use_shared"] = [0, 1]
+    tune_params["f_unroll"] = [i for i in range(1,5) if 1500/float(i) == 1500//i] #divisors of 1500
 
     #call the tuner
     args = [row_idx, col_idx, prefix_sums, correlations, N]

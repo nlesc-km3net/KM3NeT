@@ -1,8 +1,6 @@
-#include <inttypes.h>
-
 /* 
  * This kernel is meant to find the degree of a node in the correlations
- * table, which is stored in the (window_width x N) dense format
+ * table, which is stored in the (window_width_d x N) dense format
  *
  * The number of edges to nodes with a higher id is simply the number of entries
  * in the graph for a given node.
@@ -17,20 +15,10 @@
  * to obtain the total degree of the node.
  */
 
-#ifndef window_width
-#define window_width 9
-#endif
-
-
-#ifndef block_size_x
-#define block_size_x 9
-#endif
-
-
 __global__ void degrees_dense(int *degree, uint8_t *correlations, int n) {
 
     //node id for which this thread is responsible
-    int i = blockIdx.x * block_size_x + threadIdx.x;
+    int i = blockIdx.x * block_size_x_d + threadIdx.x;
 
     if (i < n) {
         int in_degree = 0;
@@ -47,7 +35,7 @@ __global__ void degrees_dense(int *degree, uint8_t *correlations, int n) {
            // if(correlations[pos1] == 1){
            //     in_degree++;
            // }
-        }
+        }   
 
         for (int j=0; j<window_width; j++){
             int pos = j * n + i;

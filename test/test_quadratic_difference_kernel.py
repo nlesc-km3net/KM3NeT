@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import numpy as np
 
-from .context import skip_if_no_cuda_device, get_kernel_path, create_plot, correlations_cpu
+from .context import skip_if_no_cuda_device, get_kernel_path, create_plot, correlations_cpu, generate_input_data
 
 from kernel_tuner import run_kernel
 
@@ -18,10 +18,7 @@ def test_quadratic_difference_kernel():
     problem_size = (N, 1)
 
     #generate input data with an expected density of correlated hits
-    x = np.random.normal(0.2, 0.1, N).astype(np.float32)
-    y = np.random.normal(0.2, 0.1, N).astype(np.float32)
-    z = np.random.normal(0.2, 0.1, N).astype(np.float32)
-    ct = 1000*np.random.normal(0.5, 0.06, N).astype(np.float32)
+    x,y,z,ct = generate_input_data(N)
 
     correlations_ref = np.zeros((sliding_window_width, N), 'uint8')
     correlations = np.zeros((sliding_window_width, N), 'uint8')

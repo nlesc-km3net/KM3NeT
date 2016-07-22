@@ -67,3 +67,11 @@ def correlations_cpu(check, x, y, z, ct):
                    check[j - i - 1, i] = 1
     return check
 
+@nottest
+def generate_input_data(N):
+    x = np.random.normal(0.2, 0.1, N).astype(np.float32)
+    y = np.random.normal(0.2, 0.1, N).astype(np.float32)
+    z = np.random.normal(0.2, 0.1, N).astype(np.float32)
+    ct = 1000*np.random.normal(0.5, 0.06, N).astype(np.float32)
+    return x,y,z,ct
+

@@ -2,22 +2,13 @@ from __future__ import print_function
 
 import numpy as np
 
-from .context import skip_if_no_cuda_device, get_kernel_path, create_plot
+from .context import skip_if_no_cuda_device, get_kernel_path, create_plot, correlations_cpu
 
 from kernel_tuner import run_kernel
 
 def test_quadratic_difference_kernel():
 
     skip_if_no_cuda_device()
-
-    #function for computing the reference answer
-    def correlations_cpu(check, x, y, z, ct):
-        for i in range(check.shape[1]):
-            for j in range(i + 1, i + check.shape[0] + 1):
-                if j < check.shape[1]:
-                    if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
-                       check[j - i - 1, i] = 1
-        return check
 
     with open(get_kernel_path()+'quadratic_difference_linear.cu', 'r') as f:
         kernel_string = f.read()

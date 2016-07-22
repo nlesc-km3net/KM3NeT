@@ -6,7 +6,7 @@ import numpy as np
 
 from context import get_kernel_path, generate_input_data
 
-from kernel_tuner import tune_kernel
+from kernel_tuner import tune_kernel, run_kernel
 
 def tune_quadratic_difference_kernel():
 
@@ -21,9 +21,16 @@ def tune_quadratic_difference_kernel():
     x,y,z,ct = generate_input_data(N)
 
     #setup kernel arguments
-    correlations = np.zeros((sliding_window_width, N), 'uint8')
+    col_idx = np.zeros(10).astype(np.int32)         #not used in first kernel
+    prefix_sums = np.zeros(10).astype(np.int32)     #not used in first kernel
     sums = np.zeros(N).astype(np.int32)
-    args = [correlations, sums, N, sliding_window_width, x, y, z, ct]
+    args = [col_idx, prefix_sums, sums, N, sliding_window_width, x, y, z, ct]
+
+    #run the sums kernel once
+    params = {"block_size_x": 256, "write_sums": 1}
+    answer = run_kernel("quadratic_difference_full", kernel_string, problem_size, args, params)
+    reference = [None for _ in range(len(args))]
+    reference[2] = answer[2]
 
     #setup tuning parameters
     tune_params = OrderedDict()
@@ -37,7 +44,22 @@ def tune_quadratic_difference_kernel():
     tune_params["f_unroll"] = [i for i in range(1,5) if 1500/float(i) == 1500//i]
     tune_params["tile_size_x"] = [2**i for i in range(3)] #powers of 2
 
-    return tune_kernel("quadratic_difference_full", kernel_string, problem_size, args, tune_params, verbose=True)
+    kernel_1 = tune_kernel("quadratic_difference_full", kernel_string, problem_size, args, tune_params, verbose=True)
+
+    #tune kernel #2
+    total_correlated_hits = reference[2].sum()
+    col_idx = np.zeros(total_correlated_hits).astype(np.int32)
+    prefix_sums = np.cumsum(reference[2]).astype(np.int32)
+    args = [col_idx, prefix_sums, sums, N, sliding_window_width, x, y, z, ct]
+
+    tune_params["write_sums"] = [0]
+    tune_params["write_spm"] = [1]
+
+    kernel_2 = tune_kernel("quadratic_difference_full", kernel_string, problem_size, args, tune_params, verbose=True)
+
+
+    return kernel_1, kernel_2
+
 
 if __name__ == "__main__":
     tune_quadratic_difference_kernel()

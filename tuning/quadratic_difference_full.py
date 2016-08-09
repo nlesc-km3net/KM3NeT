@@ -21,44 +21,51 @@ def tune_quadratic_difference_kernel():
     x,y,z,ct = generate_input_data(N)
 
     #setup kernel arguments
+    row_idx = np.zeros(10).astype(np.int32)         #not used in first kernel
     col_idx = np.zeros(10).astype(np.int32)         #not used in first kernel
     prefix_sums = np.zeros(10).astype(np.int32)     #not used in first kernel
     sums = np.zeros(N).astype(np.int32)
-    args = [col_idx, prefix_sums, sums, N, sliding_window_width, x, y, z, ct]
+    args = [row_idx, col_idx, prefix_sums, sums, N, sliding_window_width, x, y, z, ct]
 
     #run the sums kernel once
     params = {"block_size_x": 256, "write_sums": 1}
-    answer = run_kernel("quadratic_difference_full", kernel_string, problem_size, args, params)
+    answer = run_kernel("quadratic_difference_full_shfl", kernel_string, problem_size, args, params)
     reference = [None for _ in range(len(args))]
-    reference[2] = answer[2]
+    reference[3] = answer[3]
+    sums = reference[3].astype(np.int32)
 
     #setup tuning parameters
     tune_params = OrderedDict()
     tune_params["block_size_x"] = [32*i for i in range(1,33)] #multiples of 32
-    tune_params["f_unroll"] = [i for i in range(1,20) if 1500/float(i) == 1500//i] #divisors of 1500
-    tune_params["tile_size_x"] = [2**i for i in range(5)] #powers of 2
+    #tune_params["f_unroll"] = [i for i in range(1,20) if 1500/float(i) == 1500//i] #divisors of 1500
+    #tune_params["tile_size_x"] = [2**i for i in range(5)] #powers of 2
     tune_params["write_sums"] = [1]
 
     #reduced set
-    tune_params["block_size_x"] = [2**i for i in range(6,11)]
-    tune_params["f_unroll"] = [i for i in range(1,5) if 1500/float(i) == 1500//i]
-    tune_params["tile_size_x"] = [2**i for i in range(3)] #powers of 2
+    tune_params["block_size_x"] = [2**i for i in range(8,11)]
+    #tune_params["f_unroll"] = [i for i in range(1,5) if 1500/float(i) == 1500//i]
+    #tune_params["tile_size_x"] = [2**i for i in range(3)] #powers of 2
 
-    kernel_1 = tune_kernel("quadratic_difference_full", kernel_string, problem_size, args, tune_params, verbose=True)
+    #kernel_1 = tune_kernel("quadratic_difference_full_shfl", kernel_string, problem_size, args, tune_params, verbose=True)
 
     #tune kernel #2
-    total_correlated_hits = reference[2].sum()
+    total_correlated_hits = sums.sum()
+    print("total_correlated_hits", total_correlated_hits)
+    print("density", total_correlated_hits/(float(N)*sliding_window_width))
+
     col_idx = np.zeros(total_correlated_hits).astype(np.int32)
-    prefix_sums = np.cumsum(reference[2]).astype(np.int32)
+    row_idx = np.zeros(total_correlated_hits).astype(np.int32)
+    prefix_sums = np.cumsum(sums).astype(np.int32)
     args = [col_idx, prefix_sums, sums, N, sliding_window_width, x, y, z, ct]
 
     tune_params["write_sums"] = [0]
     tune_params["write_spm"] = [1]
+    tune_params["use_shared"] = [1]
 
-    kernel_2 = tune_kernel("quadratic_difference_full", kernel_string, problem_size, args, tune_params, verbose=True)
+    kernel_2 = tune_kernel("quadratic_difference_full_shfl", kernel_string, problem_size, args, tune_params, verbose=True)
 
 
-    return kernel_1, kernel_2
+    #return kernel_1, kernel_2
 
 
 if __name__ == "__main__":

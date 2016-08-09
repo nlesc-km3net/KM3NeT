@@ -2,12 +2,20 @@ from __future__ import print_function
 
 from scipy.sparse import csr_matrix
 import numpy as np
+from nose.tools import nottest
 
 from .context import skip_if_no_cuda_device, get_kernel_path, create_plot, get_full_matrix, correlations_cpu, generate_input_data
 
 from kernel_tuner import run_kernel
 
-def test_quadratic_difference_full_sums():
+def test_quadratic_difference_full_sums_impl1():
+    test_quadratic_difference_full_sums("quadratic_difference_full")
+
+def test_quadratic_difference_full_sums_impl2():
+    test_quadratic_difference_full_sums("quadratic_difference_full_shfl")
+
+@nottest
+def test_quadratic_difference_full_sums(kernel_name):
 
     skip_if_no_cuda_device()
 
@@ -22,14 +30,15 @@ def test_quadratic_difference_full_sums():
 
     correlations_ref = np.zeros((sliding_window_width, N), 'uint8')
     sums = np.zeros(N).astype(np.int32)
+    row_idx = np.zeros(10).astype(np.int32)         #not used in this test
     col_idx = np.zeros(10).astype(np.int32)         #not used in this test
     prefix_sums = np.zeros(10).astype(np.int32)     #not used in this test
 
-    args = [col_idx, prefix_sums, sums, N, sliding_window_width, x, y, z, ct]
+    args = [row_idx, col_idx, prefix_sums, sums, N, sliding_window_width, x, y, z, ct]
 
     #call the CUDA kernel
-    params = { "block_size_x": 128, "write_sums": 1, 'window_width': sliding_window_width, 'tile_size_x': 2 }
-    answer = run_kernel("quadratic_difference_full", kernel_string, problem_size, args, params)
+    params = { "block_size_x": 128, "write_sums": 1, 'window_width': sliding_window_width, 'tile_size_x': 1 }
+    answer = run_kernel(kernel_name, kernel_string, problem_size, args, params)
 
     #compute reference answer
     correlations_ref = correlations_cpu(correlations_ref, x, y, z, ct)
@@ -40,7 +49,7 @@ def test_quadratic_difference_full_sums():
     print("reference", sums_ref.sum())
     print(sums_ref)
 
-    sums = answer[2]
+    sums = answer[3]
     print("answer", sums.sum())
     print(sums)
 
@@ -51,7 +60,15 @@ def test_quadratic_difference_full_sums():
     assert all(diff == 0)
 
 
-def test_quadratic_difference_full_sparse_matrix():
+def test_quadratic_difference_full_sparse_matrix_impl1():
+    test_quadratic_difference_full_sparse_matrix("quadratic_difference_full")
+
+def test_quadratic_difference_full_sparse_matrix_impl2():
+    test_quadratic_difference_full_sparse_matrix("quadratic_difference_full_shfl")
+
+
+@nottest
+def test_quadratic_difference_full_sparse_matrix(kernel_name):
 
     skip_if_no_cuda_device()
 
@@ -72,27 +89,38 @@ def test_quadratic_difference_full_sparse_matrix():
     total_correlated_hits = corr_matrix.sum()
 
     sums = sums_ref.astype(np.int32)
+    row_idx = np.zeros(total_correlated_hits).astype(np.int32)
     col_idx = np.zeros(total_correlated_hits).astype(np.int32)
     prefix_sums = np.cumsum(sums_ref).astype(np.int32)
 
-    args = [col_idx, prefix_sums, sums, N, sliding_window_width, x, y, z, ct]
+    args = [row_idx, col_idx, prefix_sums, sums, N, sliding_window_width, x, y, z, ct]
 
     #call the CUDA kernel
-    params = { "block_size_x": 128, "write_spm": 1, 'window_width': sliding_window_width, 'tile_size_x': 1 }
-    answer = run_kernel("quadratic_difference_full", kernel_string, problem_size, args, params)
+    params = { "block_size_x": 128, "write_spm": 1, 'write_rows': 1, 'window_width': sliding_window_width, 'tile_size_x': 1, 'use_shared': 1 }
+    answer = run_kernel(kernel_name, kernel_string, problem_size, args, params)
 
     reference = csr_matrix(corr_matrix)
     col_idx_ref = reference.nonzero()[1]
 
+    row_idx = answer[0]
+    print("row_idx")
+    print(row_idx)
+
+    col_idx = answer[1]
+    answer = csr_matrix((np.ones_like(row_idx), (row_idx, col_idx)), shape=(N,N))
+
     print("reference")
-    print(col_idx_ref)
+    print(zip(reference.nonzero()[0], reference.nonzero()[1]) )
 
     print("answer")
-    print(answer[0])
+    print(zip(answer.nonzero()[0], answer.nonzero()[1]) )
+
+    diff = reference - answer
 
     print("diff")
-    diff = col_idx_ref - answer[0]
-    print(diff)
+    print(zip(diff.nonzero()[0], diff.nonzero()[1]))
 
-    assert all(diff == 0)
+    print("diff.nnz", diff.nnz)
+
+    assert diff.nnz == 0
 

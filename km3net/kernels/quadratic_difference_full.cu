@@ -28,6 +28,13 @@
 #define write_spm 0
 #endif
 
+#ifndef write_rows
+#define write_rows 0
+#endif
+
+#ifndef use_shared
+#define use_shared 0
+#endif
 
 /*
  * This kernel computes the correlated hits of hits no more than 1500 apart in both directions.
@@ -42,7 +49,7 @@
  * representation of the correlations table.
  *
  */
-__global__ void quadratic_difference_full(int *__restrict__ col_idx, const int *__restrict__ prefix_sums, int *__restrict__ sums,
+__global__ void quadratic_difference_full(int *__restrict__ row_idx, int *__restrict__ col_idx, const int *__restrict__ prefix_sums, int *__restrict__ sums,
         int N, int sliding_window_width, const float *__restrict__ x, const float *__restrict__ y, const float *__restrict__ z,
         const float *__restrict__ ct) {
 
@@ -139,6 +146,9 @@ __global__ void quadratic_difference_full(int *__restrict__ col_idx, const int *
 
                     if (diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz) {
                         #if write_spm == 1
+                        #if write_rows
+                        row_idx[offset[ti]] = bx+i+ti*block_size_x; 
+                        #endif
                         col_idx[offset[ti]] = bx+i+ti*block_size_x-window_width+j;
                         offset[ti] += 1;
                         #endif
@@ -215,6 +225,9 @@ __global__ void quadratic_difference_full(int *__restrict__ col_idx, const int *
 
                         if (diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz) {
                             #if write_spm == 1
+                            #if write_rows
+                            row_idx[offset[ti]] = bx+i+ti*block_size_x;
+                            #endif
                             col_idx[offset[ti]] = bx+i+ti*block_size_x+j;
                             offset[ti] += 1;
                             #endif
@@ -235,4 +248,239 @@ __global__ void quadratic_difference_full(int *__restrict__ col_idx, const int *
         #endif
 
 }
+
+
+#ifndef shared_memory_size
+#define shared_memory_size 20*block_size_x
+//#define shared_memory_size 10*1024
+#endif
+
+
+
+/*
+
+  NOTE TO SELF:
+
+when using use_shared == 1 there seems to be a bug regarding the indexing of the shared memory
+
+Im not sure whether the index goes below zero or above the shared memory size, since its data dependent.
+also the bug does not show every run, suggesting that its again data dependent.
+it is for sure also in the part that writes the output, possibly also in the parts that write to shared memory.
+
+it seems to be working perfectly fine without use_shared == 1
+
+
+
+*/
+
+
+
+
+/*
+ * This kernel uses warp-shuffle instructions to re-use many of
+ * the input values in registers and reduce the pressure on shared memory.
+ * However, it does this so drastically that shared memory is hardly needed anymore.
+ *
+ * Tuning parameters supported are 'block_size_x', 'read_only' [0,1], 'use_if' [0,1]
+ *
+ */
+__global__ void quadratic_difference_full_shfl(int *__restrict__ row_idx, int *__restrict__ col_idx, int *__restrict__ prefix_sums, int *sums, int N, int sliding_window_width,
+        const float *__restrict__ x, const float *__restrict__ y, const float *__restrict__ z, const float *__restrict__ ct) {
+
+    int tx = threadIdx.x;
+    int bx = blockIdx.x * block_size_x;
+
+    #if write_sums == 1
+    int sum = 0;
+    #endif
+    #if write_spm == 1
+    int offset = 0;
+
+    int block_start = 0;
+    #if use_shared == 1
+    __shared__ int sh_col_idx[shared_memory_size];
+    if (blockIdx.x > 0) {
+        block_start = prefix_sums[bx-1];
+    }
+    #endif
+
+    #endif
+
+    float ct_i = 0.0f;
+    float x_i = 0.0f;
+    float y_i = 0.0f;
+    float z_i = 0.0f;
+
+    int output = 0;
+    int i = bx + tx - window_width;
+
+    if (bx+tx < N) {
+        output = 1;
+        ct_i = LDG(ct,bx+tx);
+        x_i = LDG(x,bx+tx);
+        y_i = LDG(y,bx+tx);
+        z_i = LDG(z,bx+tx);
+    }
+
+        #if write_spm == 1
+        if (bx+tx > 0 && bx+tx < N) {
+            offset = prefix_sums[bx+tx-1];
+        }
+        #if use_shared == 1
+        offset -= block_start;
+        #endif
+        #endif
+
+
+
+//    if (bx+tx < (N/32)*32) { //problem size rounded up to nearest multiple of warp size
+
+            int laneid = tx & (32-1);
+
+            for (int j=0; j < 32-laneid; j++) {
+                if (i+j >= 0 && i+j<N) {
+
+                float diffct = ct_i - LDG(ct,i+j);
+                float diffx = x_i - LDG(x,i+j);
+                float diffy = y_i - LDG(y,i+j);
+                float diffz = z_i - LDG(z,i+j);
+
+                if ((diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz) && output) {
+                    #if write_sums == 1
+                    sum++;
+                    #endif
+                    #if write_spm == 1
+                        #if write_rows
+                        row_idx[offset + block_start] = bx+tx;
+                        #endif
+
+                        #if use_shared == 1
+                        //if (offset >= 0 && offset < shared_memory_size-1)
+                            sh_col_idx[offset++] = i+j;
+                        #else
+                        col_idx[offset++] = i+j;
+                        #endif
+                    #endif
+
+                }
+
+                }
+            }
+
+            int j;
+                
+            #if f_unroll == 2
+            #pragma unroll 2
+            #elif f_unroll == 4
+            #pragma unroll 4
+            #endif
+            for (j=32; j < window_width*2-32; j+=32) {
+
+                float ct_j = 0.0f;
+                float x_j = 0.0f;
+                float y_j = 0.0f;
+                float z_j = 0.0f;
+
+                if (i+j >= 0 && i+j<N) {
+                    ct_j = LDG(ct,i+j);
+                    x_j = LDG(x,i+j);
+                    y_j = LDG(y,i+j);
+                    z_j = LDG(z,i+j);
+                }
+
+                for (int d=1; d<33; d++) {
+                    ct_j = __shfl(ct_j, laneid+1);
+                    x_j = __shfl(x_j, laneid+1);
+                    y_j = __shfl(y_j, laneid+1);
+                    z_j = __shfl(z_j, laneid+1);
+
+                    float diffct = ct_i - ct_j;
+                    float diffx  = x_i - x_j;
+                    float diffy  = y_i - y_j;
+                    float diffz  = z_i - z_j;
+
+                    if ((diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz) && output) {
+                        #if write_sums == 1
+                        sum++;
+                        #endif
+                        #if write_spm == 1
+                            #if write_rows
+                            row_idx[offset + block_start] = bx+tx;
+                            #endif
+
+                            int c = laneid+d > 31 ? -32 : 0;
+                            #if use_shared == 1
+                            //if (offset >= 0 && offset < shared_memory_size-1)
+                                sh_col_idx[offset++] = i+j+d+c;
+                            #else
+                            col_idx[offset++] = i+j+d+c;
+                            #endif
+                        #endif
+                    }
+
+                }
+
+            }
+
+
+            j-=laneid;
+            for (; j < window_width*2+1; j++) {
+                if (i+j >= 0 && i+j<N) {
+
+                float diffct = ct_i - LDG(ct,i+j);
+                float diffx = x_i - LDG(x,i+j);
+                float diffy = y_i - LDG(y,i+j);
+                float diffz = z_i - LDG(z,i+j);
+
+                if ((diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz) && output) {
+                    #if write_sums == 1
+                    sum++;
+                    #endif
+                    #if write_spm == 1
+                        #if write_rows
+                        row_idx[offset + block_start] = bx+tx;
+                        #endif
+                        #if use_shared == 1
+                        //if (offset >= 0 && offset < shared_memory_size-1)
+                            sh_col_idx[offset++] = i+j;
+                        #else
+                        col_idx[offset++] = i+j;
+                        #endif
+                    #endif
+                }
+
+                }
+            }
+
+
+    #if write_sums == 1
+    //if (bx+tx < N) {
+        sums[bx+tx] = sum;
+    #endif
+
+//    } // end of if (bx+tx < N/32*32)
+
+    //collaboratively write back the output collected in shared memory to global memory
+
+    #if use_shared == 1 && write_spm == 1
+    int block_stop = 0;
+    int last_i = bx + block_size_x-1;
+    if (last_i < N) {
+        block_stop = prefix_sums[last_i];
+    } else {
+        block_stop = prefix_sums[N-1];
+    }
+    __syncthreads(); //ensure all threads are done writing shared memory
+    for (int k=block_start+tx; k<block_stop; k+=block_size_x) {
+        if (k-block_start >= 0 && k-block_start < shared_memory_size-1)
+            col_idx[k] = sh_col_idx[k-block_start];
+    }
+
+    #endif
+
+
+
+
+}
+
 

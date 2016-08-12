@@ -251,30 +251,8 @@ __global__ void quadratic_difference_full(int *__restrict__ row_idx, int *__rest
 
 
 #ifndef shared_memory_size
-#define shared_memory_size 20*block_size_x
-//#define shared_memory_size 10*1024
+#define shared_memory_size 10*block_size_x
 #endif
-
-
-
-/*
-
-  NOTE TO SELF:
-
-when using use_shared == 1 there seems to be a bug regarding the indexing of the shared memory
-
-Im not sure whether the index goes below zero or above the shared memory size, since its data dependent.
-also the bug does not show every run, suggesting that its again data dependent.
-it is for sure also in the part that writes the output, possibly also in the parts that write to shared memory.
-
-it seems to be working perfectly fine without use_shared == 1
-
-
-
-*/
-
-
-
 
 /*
  * This kernel uses warp-shuffle instructions to re-use many of
@@ -296,12 +274,15 @@ __global__ void quadratic_difference_full_shfl(int *__restrict__ row_idx, int *_
     #if write_spm == 1
     int offset = 0;
 
-    int block_start = 0;
+
     #if use_shared == 1
+    int block_start = 0;
     __shared__ int sh_col_idx[shared_memory_size];
     if (blockIdx.x > 0) {
         block_start = prefix_sums[bx-1];
     }
+    #elif write_rows == 1
+    int block_start = 0;
     #endif
 
     #endif
@@ -332,12 +313,9 @@ __global__ void quadratic_difference_full_shfl(int *__restrict__ row_idx, int *_
         #endif
 
 
-
-//    if (bx+tx < (N/32)*32) { //problem size rounded up to nearest multiple of warp size
-
             int laneid = tx & (32-1);
-
-            for (int j=0; j < 32-laneid; j++) {
+            if (output) {
+            for (int j=0; j < 32-laneid && output; j++) {
                 if (i+j >= 0 && i+j<N) {
 
                 float diffct = ct_i - LDG(ct,i+j);
@@ -345,7 +323,7 @@ __global__ void quadratic_difference_full_shfl(int *__restrict__ row_idx, int *_
                 float diffy = y_i - LDG(y,i+j);
                 float diffz = z_i - LDG(z,i+j);
 
-                if ((diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz) && output) {
+                if (diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz) {
                     #if write_sums == 1
                     sum++;
                     #endif
@@ -355,7 +333,6 @@ __global__ void quadratic_difference_full_shfl(int *__restrict__ row_idx, int *_
                         #endif
 
                         #if use_shared == 1
-                        //if (offset >= 0 && offset < shared_memory_size-1)
                             sh_col_idx[offset++] = i+j;
                         #else
                         col_idx[offset++] = i+j;
@@ -366,6 +343,7 @@ __global__ void quadratic_difference_full_shfl(int *__restrict__ row_idx, int *_
 
                 }
             }
+            }//end of if output
 
             int j;
                 
@@ -399,7 +377,7 @@ __global__ void quadratic_difference_full_shfl(int *__restrict__ row_idx, int *_
                     float diffy  = y_i - y_j;
                     float diffz  = z_i - z_j;
 
-                    if ((diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz) && output) {
+                    if (i+j >= 0 && i+j<N && output && (diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz)) {
                         #if write_sums == 1
                         sum++;
                         #endif
@@ -410,7 +388,6 @@ __global__ void quadratic_difference_full_shfl(int *__restrict__ row_idx, int *_
 
                             int c = laneid+d > 31 ? -32 : 0;
                             #if use_shared == 1
-                            //if (offset >= 0 && offset < shared_memory_size-1)
                                 sh_col_idx[offset++] = i+j+d+c;
                             #else
                             col_idx[offset++] = i+j+d+c;
@@ -422,7 +399,7 @@ __global__ void quadratic_difference_full_shfl(int *__restrict__ row_idx, int *_
 
             }
 
-
+            if (output) {
             j-=laneid;
             for (; j < window_width*2+1; j++) {
                 if (i+j >= 0 && i+j<N) {
@@ -432,7 +409,7 @@ __global__ void quadratic_difference_full_shfl(int *__restrict__ row_idx, int *_
                 float diffy = y_i - LDG(y,i+j);
                 float diffz = z_i - LDG(z,i+j);
 
-                if ((diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz) && output) {
+                if (diffct * diffct < diffx * diffx + diffy * diffy + diffz * diffz) {
                     #if write_sums == 1
                     sum++;
                     #endif
@@ -441,7 +418,6 @@ __global__ void quadratic_difference_full_shfl(int *__restrict__ row_idx, int *_
                         row_idx[offset + block_start] = bx+tx;
                         #endif
                         #if use_shared == 1
-                        //if (offset >= 0 && offset < shared_memory_size-1)
                             sh_col_idx[offset++] = i+j;
                         #else
                         col_idx[offset++] = i+j;
@@ -451,14 +427,13 @@ __global__ void quadratic_difference_full_shfl(int *__restrict__ row_idx, int *_
 
                 }
             }
-
+            } // end of if output
 
     #if write_sums == 1
-    //if (bx+tx < N) {
+    if (bx+tx < N) {
         sums[bx+tx] = sum;
+    }
     #endif
-
-//    } // end of if (bx+tx < N/32*32)
 
     //collaboratively write back the output collected in shared memory to global memory
 
@@ -475,11 +450,7 @@ __global__ void quadratic_difference_full_shfl(int *__restrict__ row_idx, int *_
         if (k-block_start >= 0 && k-block_start < shared_memory_size-1)
             col_idx[k] = sh_col_idx[k-block_start];
     }
-
     #endif
-
-
-
 
 }
 

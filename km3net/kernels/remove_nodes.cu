@@ -13,6 +13,11 @@
  *
  * To remove a node we need to set its degree to zero
  * To remove an edge we need to set its col_idx to -1
+ *
+ * Beyond setting degrees[i] to zero, this kernel does not update degrees[i] with the new degree
+ * because it would cause a race condition with other threads reading degrees[i] <= min, which
+ * would lead to edges being removed prematurely. This happens when the minimum degree is declining
+ * in consecutive iterations of the purging algorithm.
  */
 __global__ void remove_nodes(int *degrees, int *row_idx, int *col_idx, int *prefix_sum, const int *__restrict__ minimum, int n) {
     int i = blockIdx.x * block_size_x + threadIdx.x;
@@ -29,8 +34,6 @@ __global__ void remove_nodes(int *degrees, int *row_idx, int *col_idx, int *pref
         //if my node remains, update my edges, and degree
         if (my_degree > min) {
 
-            int new_degree = 0;
-
             //obtain indices to iterate over my edges
             int start = 0;
             if (i>0) {
@@ -43,15 +46,8 @@ __global__ void remove_nodes(int *degrees, int *row_idx, int *col_idx, int *pref
                 int col = col_idx[k];
                 if (col != -1 && degrees[col] <= min) {
                     col_idx[k] = -1;
-                } else {
-                    new_degree++;
                 }
 
-            }
-
-            //write updated degree
-            if (new_degree != my_degree) {
-                degrees[i] = new_degree;
             }
 
         }

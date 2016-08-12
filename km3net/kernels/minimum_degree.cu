@@ -72,7 +72,7 @@ __global__ void minimum_degree(int *minimum, int *num_nodes, int *degrees, int *
 
     if (i<n) {
 
-        /*
+        
         //obtain indices for reading col_idx
         int start = 0;
         if (i>0) {
@@ -91,8 +91,6 @@ __global__ void minimum_degree(int *minimum, int *num_nodes, int *degrees, int *
 
         //update degrees array
         degrees[i] = degree;
-        */
-        degree = degrees[i];
 
     }
 

@@ -34,6 +34,7 @@ def test_minimum_degree_kernel():
     col_idx = (sparse_matrix.nonzero()[1]).astype(np.int32)
     minimum = np.zeros(max_blocks).astype(np.int32)
     num_nodes = np.zeros(max_blocks).astype(np.int32)
+    input_degrees = degrees + (np.random.rand(degrees.size)*10.0).astype(np.int32)
 
     #call the CUDA kernel
     args = [minimum, num_nodes, degrees, row_idx, col_idx, prefix_sums, N]
@@ -61,6 +62,13 @@ def test_minimum_degree_kernel():
     num_reference = np.ma.masked_equal(count, 0).sum()
     print (num_reference)
     assert num_answer == num_reference
+
+    #degrees
+    print ("degrees computed")
+    print (answer[2])
+    print ("degrees reference")
+    print (degrees)
+    assert all(answer[2] - degrees == 0)
 
 
 def test_combine_blocked_min_num():

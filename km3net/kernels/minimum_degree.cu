@@ -72,6 +72,7 @@ __global__ void minimum_degree(int *minimum, int *num_nodes, int *degrees, int *
 
     if (i<n) {
 
+        /*
         //obtain indices for reading col_idx
         int start = 0;
         if (i>0) {
@@ -90,6 +91,9 @@ __global__ void minimum_degree(int *minimum, int *num_nodes, int *degrees, int *
 
         //update degrees array
         degrees[i] = degree;
+        */
+        degree = degrees[i];
+
     }
 
     //start the reduce
@@ -122,7 +126,6 @@ __global__ void minimum_degree(int *minimum, int *num_nodes, int *degrees, int *
  */
 __global__ void combine_blocked_min_num(int *minimum, int *num_nodes, int n) {
     int ti = threadIdx.x;
-
 
     __shared__ int sh_min[block_size_x];
     __shared__ int sh_sum[block_size_x];

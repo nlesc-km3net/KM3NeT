@@ -20,7 +20,7 @@ def test_remove_nodes_kernel():
     params = { "block_size_x": 128 }
 
     #generate input data with an expected density of correlated hits
-    correlations = generate_correlations_table(N, sliding_window_width, cutoff=2.2)
+    correlations = generate_correlations_table(N, sliding_window_width, cutoff=1.5)
 
     #obtain full correlation matrix for reference
     dense_matrix = get_full_matrix(correlations)
@@ -32,19 +32,12 @@ def test_remove_nodes_kernel():
     row_idx = (sparse_matrix.nonzero()[0]).astype(np.int32)
     col_idx = (sparse_matrix.nonzero()[1]).astype(np.int32)
     minimum = np.zeros(2).astype(np.int32)
-    minimum[0] = 5 #remove nodes with degree 5 or less, as a test
+    minimum[0] = 7 #remove nodes with this degree or less, as a test
 
     #call the CUDA kernel
     args = [degrees, row_idx, col_idx, prefix_sums, minimum, N]
     answer = run_kernel("remove_nodes", kernel_string, problem_size, args, params)
 
-    #verify all kernel outputs
-    #updated degrees array
-    print("degrees")
-    print(answer[0])
-    reference = degrees.copy()
-    reference[degrees <= minimum[0]] = 0
-    assert all(answer[0] == reference)
 
     #updated col_idx array
     #this array will contain -1 for removed edges of non-removed nodes
@@ -57,14 +50,41 @@ def test_remove_nodes_kernel():
     col_idx = col_idx[col_idx!=-1]
     answer_matrix = csr_matrix((np.ones_like(row_idx),(row_idx,col_idx)), shape=(N,N))
 
+    degrees[degrees <= minimum[0]] = 0
     #reconstruct the same matrix from the reference answer
     for i in range(dense_matrix.shape[0]):
         for j in range(dense_matrix.shape[1]):
             #for non-removed nodes remove the edge to removed nodes
-            if reference[i] > 0 and reference[j] == 0:
+            if degrees[i] > 0 and degrees[j] == 0:
                 dense_matrix[i,j] = 0
+
     sparse_ref = csr_matrix(dense_matrix)
     print(sparse_ref.nnz)
+
+
+    #remove all garbage to obtain the new degrees
+    for i in range(dense_matrix.shape[0]):
+        if degrees[i] == 0:
+            dense_matrix[i,:] = 0
+        else:
+            for j in range(dense_matrix.shape[1]):
+                if degrees[j] == 0:
+                    dense_matrix[i,j] = 0
+                    dense_matrix[j,i] = 0
+    reference_degrees = dense_matrix.sum(axis=0)
+
+
+    #verify all kernel outputs
+    #updated degrees array
+    print("degrees")
+    print(answer[0])
+    #reference_degrees[reference_degrees <= minimum[0]] = 0
+    print("degrees reference")
+    print(reference_degrees)
+    print("degrees diff")
+    print((reference_degrees-answer[0]).astype(np.int32))
+
+    assert all(answer[0] == reference_degrees)
 
     #verify that the two sparse matrices are the same
     assert answer_matrix.nnz == sparse_ref.nnz

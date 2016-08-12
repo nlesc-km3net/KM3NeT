@@ -26,8 +26,10 @@ __global__ void remove_nodes(int *degrees, int *row_idx, int *col_idx, int *pref
             degrees[i] = 0;
         }
         
-        //if my node remains, update my edges
+        //if my node remains, update my edges, and degree
         if (my_degree > min) {
+
+            int new_degree = 0;
 
             //obtain indices to iterate over my edges
             int start = 0;
@@ -41,12 +43,18 @@ __global__ void remove_nodes(int *degrees, int *row_idx, int *col_idx, int *pref
                 int col = col_idx[k];
                 if (col != -1 && degrees[col] <= min) {
                     col_idx[k] = -1;
+                } else {
+                    new_degree++;
                 }
 
             }
 
-        }
+            //write updated degree
+            if (new_degree != my_degree) {
+                degrees[i] = new_degree;
+            }
 
+        }
 
     }
 }

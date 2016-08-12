@@ -14,8 +14,8 @@ def test_minimum_degree_kernel():
     with open(get_kernel_path()+'minimum_degree.cu', 'r') as f:
         kernel_string = f.read()
 
-    N = np.int32(300)
-    sliding_window_width = np.int32(150)
+    N = np.int32(3000)
+    sliding_window_width = np.int32(1500)
     problem_size = (N, 1)
     params = { "block_size_x": 128, "threshold": 1 }
     max_blocks = int(np.ceil(N / float(params["block_size_x"])))
@@ -34,10 +34,9 @@ def test_minimum_degree_kernel():
     col_idx = (sparse_matrix.nonzero()[1]).astype(np.int32)
     minimum = np.zeros(max_blocks).astype(np.int32)
     num_nodes = np.zeros(max_blocks).astype(np.int32)
-    input_degrees = degrees + (np.random.rand(degrees.size)*10.0).astype(np.int32)
 
     #call the CUDA kernel
-    args = [minimum, num_nodes, input_degrees, row_idx, col_idx, prefix_sums, N]
+    args = [minimum, num_nodes, degrees, row_idx, col_idx, prefix_sums, N]
     answer = run_kernel("minimum_degree", kernel_string, problem_size, args, params)
 
     #verify all kernel outputs
@@ -62,14 +61,6 @@ def test_minimum_degree_kernel():
     num_reference = np.ma.masked_equal(count, 0).sum()
     print (num_reference)
     assert num_answer == num_reference
-
-    #degrees
-    print ("degrees computed")
-    print (answer[2])
-    print ("degrees reference")
-    print (degrees)
-    assert all(answer[2] - degrees == 0)
-
 
 
 def test_combine_blocked_min_num():

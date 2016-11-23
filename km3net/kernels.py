@@ -7,8 +7,33 @@ from pycuda.compiler import SourceModule
 from km3net.util import *
 
 class QuadraticDifferenceSparse(object):
+    """ class that provides an interface to the Quadratic Difference GPU Kernel and maintains GPU state"""
 
-    def __init__(self, N, sliding_window_width, cc):
+    def __init__(self, N, sliding_window_width=1500, cc='52'):
+        """instantiate QuadraticDifferenceSparse
+
+        Create the object that provides an interface to the GPU kernel for performing the
+        Quadratic Difference algorithm. This implementation of the algorithm stores the
+        correlation table in a sparse manner, using CSR notation.
+
+        When this object is instantiated the CUDA kernel
+        code is compiled and some of the GPU memory is allocated.
+
+        :param N: The largest number of hits that are to be processed by one iteration
+                of the quadratic difference algorithm.
+        :type N: int
+
+        :param sliding_window_width: The width of the 'window' in which we look for correlated
+                hits. This is related to the size of the detector and the expected rate of background
+                induced hits. The value we currently assume is 1500.
+        :type sliding_window_width: int
+
+        :param cc: The CUDA compute capability of the target device as a string, consisting
+                of the major and minor number concatenated without any separators.
+        :type cc: string
+
+        """
+
         self.N = N
         self.sliding_window_width = sliding_window_width
 
@@ -29,6 +54,32 @@ class QuadraticDifferenceSparse(object):
         self.grid = (int(np.ceil(N/float(block_size_x))), 1)
 
     def compute(self, d_x, d_y, d_z, d_ct):
+        """ perform a computation of the quadratic difference algorithm
+
+
+        :param d_x: an array storing the x-coordinates of the hits
+        :type d_x: numpy ndarray of type numpy.float32
+
+        :param d_y: an array storing the y-coordinates of the hits
+        :type d_y: numpy ndarray of type numpy.float32
+
+        :param d_z: an array storing the z-coordinates of the hits
+        :type d_z: numpy ndarray of type numpy.float32
+
+        :param d_ct: an array storing the 'ct' value of the hits.
+            This is the time in nano seconds multiplied with the speed of light.
+        :type d_ct: numpy ndarray of type numpy.float32
+
+
+        :returns: d_col_idx, d_prefix_sums, d_degrees
+            d_col_idx, d_prefix_sums: The sparse matrix in CSR notation. d_col_idx stores the column indices,
+            the size equals the number of correlations (or edges in the graph).
+            d_prefix_sums stores per row, the start index of the row within the column index array. The size of d_prefix_sums is equal to the number of hits.
+            d_degrees: The number of correlated hits per hit, stored as an array of size equal to the number of hits.
+
+        :rtype: tuple( pycuda.driver.DeviceAllocation )
+
+        """
 
         #run the first kernel
         row_idx = np.zeros(10).astype(np.int32)
@@ -60,8 +111,27 @@ class QuadraticDifferenceSparse(object):
 
 
 class PurgingSparse(object):
+    """ class that provides an interface to the GPU Kernels used for Purging and maintains GPU state"""
 
     def __init__(self, N, cc):
+        """instantiate PurgingSparse
+
+        Create the object that provides an interface to the GPU kernel for performing the
+        Purging algorithm on a sparse correlation table. This implementation of the
+        algorithm uses the correlation table in a sparse manner, produced by the
+        Quadratic Difference Sparse kernel. When this object is instantiated the
+        CUDA kernel codes are compiled.
+
+        :param N: The largest number of hits that are to be processed by one iteration
+                of the quadratic difference algorithm.
+        :type N: int
+
+        :param cc: The CUDA compute capability of the target device as a string, consisting
+                of the major and minor number concatenated without any separators.
+        :type cc: string
+
+        """
+
         self.N = N
 
         with open(get_kernel_path()+'remove_nodes.cu', 'r') as f:
@@ -86,6 +156,29 @@ class PurgingSparse(object):
 
 
     def compute(self, d_col_idx, d_prefix_sums, d_degrees, shift=0):
+        """ perform purging on a sparse matrix
+
+        :param d_col_idx: A device allocation storing the column indices of the sparse matrix.
+            The size of d_col_idx equals the number of correlations.
+        :type d_col_idx: pycuda.driver.DeviceAllocation
+
+        :param d_prefix_sums: The start index of each row within the column index array.
+            The size of d_prefix_sums is equal to the number of hits.
+        :type d_prefix_sums: pycuda.driver.DeviceAllocation
+
+        :param d_degrees: The number of correlated hits per hit, stored as an array of size equal to the number of hits.
+        :type d_degrees: pycuda.driver.DeviceAllocation
+
+        :param shift: Optional parameter that can be used to shift the indices of the nodes
+            that remain after purging. This could be used when sliding through a larger time
+            slice to convert the indices from within the current slice to a global index.
+        :type shift: int
+
+
+        :returns: The list of node indices of the nodes that remain after purging.
+        :rtype: list ( int )
+
+        """
 
         minimum = np.zeros(self.max_blocks).astype(np.int32)
         num_nodes = np.zeros(self.max_blocks).astype(np.int32)
@@ -133,8 +226,8 @@ class PurgingSparse(object):
             indices = np.array(range(degrees.size))
             found_indices = indices[degrees >= current_minimum]
             print(found_indices + shift)
-            return found_indices.size
+            return found_indices
 
-        return 0
+        return []
 
 

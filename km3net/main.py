@@ -55,10 +55,10 @@ def main():
         d_col_idx, d_prefix_sums, d_degrees = qd_kernel.compute(d_x, d_y, d_z, d_ct)
 
         #use purging algorithm to find clique
-        clique_size = purging.compute(d_col_idx, d_prefix_sums, d_degrees, shift)
-        if clique_size > 0:
+        clique = purging.compute(d_col_idx, d_prefix_sums, d_degrees, shift)
+        if clique.size > 0:
             found_cliques += 1
-            total_clique_size += clique_size
+            total_clique_size += clique.size
 
     print("processing timeslice finished")
     print("found", found_cliques, "cliques in", counter, "slices")

@@ -3,16 +3,45 @@ import os
 import pandas
 import numpy as np
 import scipy.constants
+from kernel_tuner import run_kernel
 
 import pycuda.driver as drv
 
 data_dir = '/var/scratch/bwn200/KM3Net/'
 
 def get_kernel_path():
+    """ function that returns the location of the CUDA kernels on disk
+
+        :returns: the location of the CUDA kernels
+        :rtype: string
+    """
     path = "/".join(os.path.dirname(os.path.realpath(__file__)).split('/')[:-1])
     return path+'/km3net/kernels/'
 
 def get_slice(x_all, y_all, z_all, ct_all, N, shift):
+    """ return a smaller slice of the whole timeslice
+
+        :param x_all: The x-coordinates of the hits for the whole timeslice
+        :type x_all: numpy ndarray of type numpy.float32
+
+        :param y_all: The y-coordinates of the hits for the whole timeslice
+        :type y_all: numpy ndarray of type numpy.float32
+
+        :param z_all: The z-coordinates of the hits for the whole timeslice
+        :type z_all: numpy ndarray of type numpy.float32
+
+        :param ct_all: The ct values of the hits for the whole timeslice
+        :type ct_all: numpy ndarray of type numpy.float32
+
+        :param N: The number of hits that this smaller slice should contain
+        :type N: int
+
+        :param shift: The offset into the whole timeslice where this slice should start
+        :type shift: int
+
+        :returns: x,y,z,ct for the smaller slice
+        :rtype: tuple(numpy ndarray of type numpy.float32)
+    """
     x   = x_all[shift:shift+N]
     y   = y_all[shift:shift+N]
     z   = z_all[shift:shift+N]
@@ -20,6 +49,11 @@ def get_slice(x_all, y_all, z_all, ct_all, N, shift):
     return x,y,z,ct
 
 def init_pycuda():
+    """ helper func to init PyCuda
+
+        :returns: The PyCuda context and a string containing the major and minor compute capability for the device
+        :rtype: pycuda.driver.Context, string
+    """
     drv.init()
     context = drv.Device(0).make_context()
     devprops = { str(k): v for (k, v) in context.get_device().get_attributes().items() }
@@ -27,34 +61,77 @@ def init_pycuda():
     return context, cc
 
 def allocate_and_copy(arg):
+    """ helper func to allocate and copy GPU memory
+
+        :param arg: A numpy array that should be moved to GPU memory. This function
+            will allocate GPU memory equal to the size of this array and copy the
+            entire array into the newly allocated GPU memory.
+        :type arg: numpy ndarray
+
+        :returns: A PyCuda device allocation that represents the GPU memory allocation
+        :rtype: pycuda.driver.DeviceAllocation
+    """
     gpu_arg = drv.mem_alloc(arg.nbytes)
     drv.memcpy_htod(gpu_arg, arg)
     return gpu_arg
 
-from kernel_tuner import run_kernel
-
-data_dir = '/var/scratch/bwn200/KM3Net/'
-
-def get_kernel_path():
-    path = "/".join(os.path.dirname(os.path.realpath(__file__)).split('/')[:-1])
-    return path+'/km3net/kernels/'
 
 def generate_correlations_table(N, sliding_window_width, cutoff=2.87):
-    #generate input data with an expected density of correlated hits
+    """ generate input data with an expected density of correlated hits
+
+        This function is for testing purposes. It generates a correlations
+        table of size N by sliding_window_width, which is filled with zeros
+        or ones when two hits are considered correlated.
+
+        :param N: The number of hits to be considerd by this correlation table
+        :type N: int
+
+        :param sliding_window_width: The sliding window width used for this
+            correlation table.
+        :type sliding_window_width: int
+
+        :param cutoff: The cutoff used for considering two hits correlated. This
+            is actually the sigma of gaussian distribution, only values that are
+            above the cutoff are considered a hit. Default value is 2.87, which
+            should fill a correlations table with a density of roughly 0.0015.
+        :type cutoff: float
+
+        :returns: correlations table of size N by sliding_window_width
+        :rtype: numpy ndarray of type numpy.uint8
+
+    """
     correlations = np.random.randn(sliding_window_width, N)
     correlations[correlations <= cutoff] = 0
     correlations[correlations > cutoff] = 1
     correlations = np.array(correlations.reshape(sliding_window_width, N), dtype=np.uint8)
-
     #zero the triangle at the end of correlations table that cannot contain any ones
     for j in range(correlations.shape[0]):
         for i in range(N-j-1, N):
             correlations[j,i] = 0
-
     return correlations
 
 
 def generate_large_correlations_table(N, sliding_window_width):
+    """ generate a larget set of input data with an expected density of correlated hits
+
+        This function is for testing purposes. It generates a large correlations
+        table of size N by sliding_window_width, which is filled with zeros
+        or ones when two hits are considered correlated. This function has no cutoff
+        parameter but uses generate_input_data() to get input data. The correlations
+        table is reconstructed on the GPU, for which a kernel is compiled and ran
+        on the fly.
+
+        :param N: The number of hits to be considerd by this correlation table
+        :type N: int
+
+        :param sliding_window_width: The sliding window width used for this
+            correlation table.
+        :type sliding_window_width: int
+
+        :returns: correlations table of size N by sliding_window_width and an array
+            storing the number of correlated hits per hit of size N.
+        :rtype: numpy ndarray of type numpy.uint8, a numpy array of type numpy.int32
+    """
     #generating a very large correlations table takes hours on the CPU
     #reconstruct input data on the GPU
     x,y,z,ct = generate_input_data(N)
@@ -75,13 +152,7 @@ def generate_large_correlations_table(N, sliding_window_width):
     data = run_kernel("degrees_dense", degrees_string, problem_size, args, {"block_size_x": 512})
     sums = data[0]
 
-    print("generated large correlations table")
-    print("N", N)
-    print("total_correlated_hits", sums.sum())
-    print("density", sums.sum() / (float(N)*sliding_window_width) )
-
     return correlations, sums
-
 
 def create_sparse_matrix(correlations, sums):
     N = np.int32(correlations.shape[0])

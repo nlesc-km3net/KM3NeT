@@ -1,0 +1,416 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Internal module documentation &mdash; km3net 0.0.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="km3net 0.0.1 documentation" href="index.html"/>
+        <link rel="prev" title="The KM3Net documentation" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> km3net
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Introduction</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Internal module documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#km3net-kernels-quadraticdifferencesparse">km3net.kernels.QuadraticDifferenceSparse</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#km3net-kernels-purgingsparse">km3net.kernels.PurgingSparse</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-kernel_tuner.util">km3net.util</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">km3net</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Internal module documentation</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/internal.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="toctree-wrapper compound">
+</div>
+<div class="section" id="internal-module-documentation">
+<h1>Internal module documentation<a class="headerlink" href="#internal-module-documentation" title="Permalink to this headline">¶</a></h1>
+<p>This file provides detailed information about the objects and modules used by
+the KM3Net package internally. This information should only be
+relevant for developers of the KM3Net package.</p>
+<div class="section" id="km3net-kernels-quadraticdifferencesparse">
+<h2>km3net.kernels.QuadraticDifferenceSparse<a class="headerlink" href="#km3net-kernels-quadraticdifferencesparse" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="km3net.kernels.QuadraticDifferenceSparse">
+<em class="property">class </em><code class="descclassname">km3net.kernels.</code><code class="descname">QuadraticDifferenceSparse</code><span class="sig-paren">(</span><em>N</em>, <em>sliding_window_width=1500</em>, <em>cc='52'</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.kernels.QuadraticDifferenceSparse" title="Permalink to this definition">¶</a></dt>
+<dd><p>class that provides an interface to the Quadratic Difference GPU Kernel and maintains GPU state</p>
+<p>instantiate QuadraticDifferenceSparse</p>
+<p>Create the object that provides an interface to the GPU kernel for performing the
+Quadratic Difference algorithm. This implementation of the algorithm stores the
+correlation table in a sparse manner, using CSR notation.</p>
+<p>When this object is instantiated the CUDA kernel
+code is compiled and some of the GPU memory is allocated.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>N</strong> (<em>int</em>) &#8211; The largest number of hits that are to be processed by one iteration
+of the quadratic difference algorithm.</li>
+<li><strong>sliding_window_width</strong> (<em>int</em>) &#8211; The width of the &#8216;window&#8217; in which we look for correlated
+hits. This is related to the size of the detector and the expected rate of background
+induced hits. The value we currently assume is 1500.</li>
+<li><strong>cc</strong> (<em>string</em>) &#8211; The CUDA compute capability of the target device as a string, consisting
+of the major and minor number concatenated without any separators.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="km3net.kernels.QuadraticDifferenceSparse.compute">
+<code class="descname">compute</code><span class="sig-paren">(</span><em>d_x</em>, <em>d_y</em>, <em>d_z</em>, <em>d_ct</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.kernels.QuadraticDifferenceSparse.compute" title="Permalink to this definition">¶</a></dt>
+<dd><p>perform a computation of the quadratic difference algorithm</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>d_x</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; an array storing the x-coordinates of the hits</li>
+<li><strong>d_y</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; an array storing the y-coordinates of the hits</li>
+<li><strong>d_z</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; an array storing the z-coordinates of the hits</li>
+<li><strong>d_ct</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; an array storing the &#8216;ct&#8217; value of the hits.
+This is the time in nano seconds multiplied with the speed of light.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">d_col_idx, d_prefix_sums, d_degrees
+d_col_idx, d_prefix_sums: The sparse matrix in CSR notation. d_col_idx stores the column indices,
+the size equals the number of correlations (or edges in the graph).
+d_prefix_sums stores per row, the start index of the row within the column index array. The size of d_prefix_sums is equal to the number of hits.
+d_degrees: The number of correlated hits per hit, stored as an array of size equal to the number of hits.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">tuple( pycuda.driver.DeviceAllocation )</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="km3net-kernels-purgingsparse">
+<h2>km3net.kernels.PurgingSparse<a class="headerlink" href="#km3net-kernels-purgingsparse" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="km3net.kernels.PurgingSparse">
+<em class="property">class </em><code class="descclassname">km3net.kernels.</code><code class="descname">PurgingSparse</code><span class="sig-paren">(</span><em>N</em>, <em>cc</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.kernels.PurgingSparse" title="Permalink to this definition">¶</a></dt>
+<dd><p>class that provides an interface to the GPU Kernels used for Purging and maintains GPU state</p>
+<p>instantiate PurgingSparse</p>
+<p>Create the object that provides an interface to the GPU kernel for performing the
+Purging algorithm on a sparse correlation table. This implementation of the
+algorithm uses the correlation table in a sparse manner, produced by the
+Quadratic Difference Sparse kernel. When this object is instantiated the
+CUDA kernel codes are compiled.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>N</strong> (<em>int</em>) &#8211; The largest number of hits that are to be processed by one iteration
+of the quadratic difference algorithm.</li>
+<li><strong>cc</strong> (<em>string</em>) &#8211; The CUDA compute capability of the target device as a string, consisting
+of the major and minor number concatenated without any separators.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="km3net.kernels.PurgingSparse.compute">
+<code class="descname">compute</code><span class="sig-paren">(</span><em>d_col_idx</em>, <em>d_prefix_sums</em>, <em>d_degrees</em>, <em>shift=0</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.kernels.PurgingSparse.compute" title="Permalink to this definition">¶</a></dt>
+<dd><p>perform purging on a sparse matrix</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>d_col_idx</strong> (<em>pycuda.driver.DeviceAllocation</em>) &#8211; A device allocation storing the column indices of the sparse matrix.
+The size of d_col_idx equals the number of correlations.</li>
+<li><strong>d_prefix_sums</strong> (<em>pycuda.driver.DeviceAllocation</em>) &#8211; The start index of each row within the column index array.
+The size of d_prefix_sums is equal to the number of hits.</li>
+<li><strong>d_degrees</strong> (<em>pycuda.driver.DeviceAllocation</em>) &#8211; The number of correlated hits per hit, stored as an array of size equal to the number of hits.</li>
+<li><strong>shift</strong> (<em>int</em>) &#8211; Optional parameter that can be used to shift the indices of the nodes
+that remain after purging. This could be used when sliding through a larger time
+slice to convert the indices from within the current slice to a global index.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The list of node indices of the nodes that remain after purging.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list ( int )</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-kernel_tuner.util">
+<span id="km3net-util"></span><h2>km3net.util<a class="headerlink" href="#module-kernel_tuner.util" title="Permalink to this headline">¶</a></h2>
+<p>Module for kernel tuner utility functions</p>
+<dl class="function">
+<dt id="kernel_tuner.util.detect_language">
+<code class="descclassname">kernel_tuner.util.</code><code class="descname">detect_language</code><span class="sig-paren">(</span><em>lang</em>, <em>original_kernel</em><span class="sig-paren">)</span><a class="headerlink" href="#kernel_tuner.util.detect_language" title="Permalink to this definition">¶</a></dt>
+<dd><p>attempt to detect language from the kernel_string if not specified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="kernel_tuner.util.get_grid_dimensions">
+<code class="descclassname">kernel_tuner.util.</code><code class="descname">get_grid_dimensions</code><span class="sig-paren">(</span><em>problem_size</em>, <em>params</em>, <em>grid_div_y</em>, <em>grid_div_x</em><span class="sig-paren">)</span><a class="headerlink" href="#kernel_tuner.util.get_grid_dimensions" title="Permalink to this definition">¶</a></dt>
+<dd><p>compute grid dims based on problem sizes and listed grid divisors</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="kernel_tuner.util.get_thread_block_dimensions">
+<code class="descclassname">kernel_tuner.util.</code><code class="descname">get_thread_block_dimensions</code><span class="sig-paren">(</span><em>params</em><span class="sig-paren">)</span><a class="headerlink" href="#kernel_tuner.util.get_thread_block_dimensions" title="Permalink to this definition">¶</a></dt>
+<dd><p>thread block size from tuning params, currently using convention</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="kernel_tuner.util.looks_like_a_filename">
+<code class="descclassname">kernel_tuner.util.</code><code class="descname">looks_like_a_filename</code><span class="sig-paren">(</span><em>original_kernel</em><span class="sig-paren">)</span><a class="headerlink" href="#kernel_tuner.util.looks_like_a_filename" title="Permalink to this definition">¶</a></dt>
+<dd><p>attempt to detect whether source code or a filename was passed</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="kernel_tuner.util.prepare_kernel_string">
+<code class="descclassname">kernel_tuner.util.</code><code class="descname">prepare_kernel_string</code><span class="sig-paren">(</span><em>original_kernel</em>, <em>params</em>, <em>grid=(1</em>, <em>1)</em><span class="sig-paren">)</span><a class="headerlink" href="#kernel_tuner.util.prepare_kernel_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>prepend the kernel with a series of C preprocessor defines</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="kernel_tuner.util.prepare_list_of_files">
+<code class="descclassname">kernel_tuner.util.</code><code class="descname">prepare_list_of_files</code><span class="sig-paren">(</span><em>kernel_file_list</em>, <em>params</em>, <em>grid</em><span class="sig-paren">)</span><a class="headerlink" href="#kernel_tuner.util.prepare_list_of_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>prepare the kernel string along with any additional files</p>
+<p>The first file in the list is allowed to include or read in the others
+The files beyond the first are considered additional files that may also contain tunable parameters</p>
+<p>For each file beyond the first this function creates a temporary file with
+preprocessors statements inserted. Occurences of the original filenames in the
+first file are replaced with their temporary counterparts.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>kernel_file_list</strong> (<em>list(string)</em>) &#8211; A list of filenames. The first file in the list is
+allowed to read or include the other files in the list. All files may
+will have access to the tunable parameters.</li>
+<li><strong>params</strong> (<em>dict()</em>) &#8211; A dictionary with the tunable parameters for this particular
+instance.</li>
+<li><strong>grid</strong> (<em>tuple()</em>) &#8211; The grid dimensions for this instance. The grid dimensions are
+also inserted into the code as if they are tunable parameters for
+convenience.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="kernel_tuner.util.replace_param_occurrences">
+<code class="descclassname">kernel_tuner.util.</code><code class="descname">replace_param_occurrences</code><span class="sig-paren">(</span><em>string</em>, <em>params</em><span class="sig-paren">)</span><a class="headerlink" href="#kernel_tuner.util.replace_param_occurrences" title="Permalink to this definition">¶</a></dt>
+<dd><p>replace occurrences of the tuning params with their current value</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="kernel_tuner.util.setup_block_and_grid">
+<code class="descclassname">kernel_tuner.util.</code><code class="descname">setup_block_and_grid</code><span class="sig-paren">(</span><em>dev</em>, <em>problem_size</em>, <em>grid_div_y</em>, <em>grid_div_x</em>, <em>params</em>, <em>instance_string</em>, <em>verbose</em><span class="sig-paren">)</span><a class="headerlink" href="#kernel_tuner.util.setup_block_and_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>compute thread block and grid dimensions for this kernel</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="kernel_tuner.util.setup_kernel_strings">
+<code class="descclassname">kernel_tuner.util.</code><code class="descname">setup_kernel_strings</code><span class="sig-paren">(</span><em>kernel_name</em>, <em>original_kernel</em>, <em>params</em>, <em>grid</em>, <em>instance_string</em><span class="sig-paren">)</span><a class="headerlink" href="#kernel_tuner.util.setup_kernel_strings" title="Permalink to this definition">¶</a></dt>
+<dd><p>create configuration specific kernel string</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="The KM3Net documentation" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Ben van Werkhoven.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -140,121 +140,43 @@
 </ul>
 </div>
 </div>
-<div class="section" id="module-kernel_tuner.interface">
-<span id="introduction"></span><h1>Introduction<a class="headerlink" href="#module-kernel_tuner.interface" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="a-simple-cuda-opencl-kernel-tuner-in-python">
-<h2>A simple CUDA/OpenCL kernel tuner in Python<a class="headerlink" href="#a-simple-cuda-opencl-kernel-tuner-in-python" title="Permalink to this headline">¶</a></h2>
-<p>The goal of this project is to provide a - as simple as possible - tool
-for tuning CUDA and OpenCL kernels. This implies that any CUDA or OpenCL
-kernel can be tuned without requiring extensive changes to the original
-kernel code.</p>
-<p>A very common problem in GPU programming is that some combination of
-thread block dimensions and other kernel parameters, like tiling or
-unrolling factors, results in dramatically better performance than other
-kernel configurations. The goal of auto-tuning is to automate the
-process of finding the best performing configuration for a given device.</p>
-<p>This kernel tuner aims that you can directly use the tuned kernel
-without introducing any new dependencies. The tuned kernels can
-afterwards be used independently of the programming environment, whether
-that is using C/C++/Java/Fortran or Python doesn&#8217;t matter.</p>
-<p>The kernel_tuner module currently only contains main one function which
-is called tune_kernel to which you pass at least the kernel name, a string
-containing the kernel code, the problem size, a list of kernel function
-arguments, and a dictionary of tunable parameters. There are also a lot
-of optional parameters, for a complete list see the full documentation of
-tune_kernel.</p>
+<div class="section" id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<p>The software for the real-time detection of neutrinos in the new generation neutrino telescope.</p>
+<p>This software package covers the implementation of a pipeline that
+analyzes the hits that come out of the detector. The algorithm looks
+for correlated hits and analyzes them to detect neutrinos passing
+through the detector.</p>
 <div class="section" id="installation">
-<h3>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h3>
-<div class="line-block">
-<div class="line">clone the repository</div>
-<div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">git</span> <span class="pre">clone</span> <span class="pre">git&#64;github.com:benvanwerkhoven/kernel_tuner.git</span></code></div>
-</div>
-<div class="line">change into the top-level directory</div>
-<div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">cd</span> <span class="pre">kernel_tuner</span></code></div>
-</div>
-<div class="line">install using</div>
-<div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-r</span> <span class="pre">requirements.txt</span></code></div>
-<div class="line"><code class="docutils literal"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">.</span></code></div>
-</div>
-</div>
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<p>Installation is currently not required, if needed instructions will follow later.</p>
 </div>
 <div class="section" id="dependencies">
-<h3>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h3>
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
-<li>Python 2.7 or Python 3.5</li>
-<li>PyCuda and/or PyOpenCL (<a class="reference external" href="https://mathema.tician.de/software/">https://mathema.tician.de/software/</a>)</li>
+<li>Python 3</li>
+<li>PyCuda (<a class="reference external" href="https://mathema.tician.de/software/">https://mathema.tician.de/software/</a>)</li>
+<li>Pandas</li>
+<li>Scipy</li>
+<li>Numpy</li>
+<li>Sphinx</li>
+<li>Sphinx readthedocs theme</li>
 </ul>
 </div></blockquote>
+<p>Dependencies can be installed with <cite>pip install -r requirements.txt</cite>.</p>
 </div>
 <div class="section" id="example-usage">
-<h3>Example usage<a class="headerlink" href="#example-usage" title="Permalink to this headline">¶</a></h3>
-<p>The following shows a simple example for tuning a CUDA kernel:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">kernel_string</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">__global__ void vector_add(float *c, float *a, float *b, int n) {</span>
-<span class="s2">    int i = blockIdx.x * block_size_x + threadIdx.x;</span>
-<span class="s2">    if (i&lt;n) {</span>
-<span class="s2">        c[i] = a[i] + b[i];</span>
-<span class="s2">    }</span>
-<span class="s2">}</span>
-<span class="s2">&quot;&quot;&quot;</span>
-
-<span class="n">size</span> <span class="o">=</span> <span class="mi">10000000</span>
-<span class="n">problem_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-
-<span class="n">a</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">size</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-<span class="n">b</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">size</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-<span class="n">c</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
-<span class="n">n</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
-<span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">n</span><span class="p">]</span>
-
-<span class="n">tune_params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-<span class="n">tune_params</span><span class="p">[</span><span class="s2">&quot;block_size_x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">128</span><span class="o">+</span><span class="mi">64</span><span class="o">*</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">15</span><span class="p">)]</span>
-
-<span class="n">tune_kernel</span><span class="p">(</span><span class="s2">&quot;vector_add&quot;</span><span class="p">,</span> <span class="n">kernel_string</span><span class="p">,</span> <span class="n">problem_size</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">tune_params</span><span class="p">)</span>
-</pre></div>
+<h2>Example usage<a class="headerlink" href="#example-usage" title="Permalink to this headline">¶</a></h2>
+<p>Example on how to use the software will go here.</p>
 </div>
-<p>The exact same Python code can be used to tune an OpenCL kernel:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">kernel_string</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">__kernel void vector_add(__global float *c, __global float *a, __global float *b, int n) {</span>
-<span class="s2">    int i = get_global_id(0);</span>
-<span class="s2">    if (i&lt;n) {</span>
-<span class="s2">        c[i] = a[i] + b[i];</span>
-<span class="s2">    }</span>
-<span class="s2">}</span>
-<span class="s2">&quot;&quot;&quot;</span>
-</pre></div>
-</div>
-<p>Or even just a C function, see the example <a class="reference external" href="https://github.com/benvanwerkhoven/kernel_tuner/blob/master/examples/c/vector_add.py">here</a>.</p>
-<p>You can find these and many - more extensive - example codes, in the
-<a class="reference external" href="https://github.com/benvanwerkhoven/kernel_tuner/blob/master/examples/">examples</a>
-directory. See the <a class="reference external" href="http://benvanwerkhoven.github.io/kernel_tuner/sphinxdoc/html/index.html">full documentation</a>
-for several highly detailed tutorial-style explanations of example
-kernels and the scripts to tune them.</p>
-</div>
-<div class="section" id="author">
-<h3>Author<a class="headerlink" href="#author" title="Permalink to this headline">¶</a></h3>
-<p>Ben van Werkhoven &lt;<a class="reference external" href="mailto:b&#46;vanwerkhoven&#37;&#52;&#48;esciencenter&#46;nl">b<span>&#46;</span>vanwerkhoven<span>&#64;</span>esciencenter<span>&#46;</span>nl</a>&gt;</p>
-</div>
-<div class="section" id="copyright-and-license">
-<h3>Copyright and License<a class="headerlink" href="#copyright-and-license" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="contributors">
+<h2>Contributors<a class="headerlink" href="#contributors" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>Copyright 2016 Netherlands eScience Center</li>
+<li>Daniela Remenska</li>
+<li>Hanno Spreeuw</li>
+<li>Ben van Werkhoven</li>
 </ul>
-<p>Licensed under the Apache License, Version 2.0 (the &#8220;License&#8221;);
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at</p>
-<blockquote>
-<div><a class="reference external" href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a></div></blockquote>
-<p>Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an &#8220;AS IS&#8221; BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.</p>
-</div>
 </div>
 <div class="section" id="indices-and-tables">
 <h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h2>

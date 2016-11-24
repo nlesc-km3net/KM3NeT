@@ -1,0 +1,6 @@
+{
+  "name": "Km3net",
+  "tagline": "KM3Net - Real-time detection of neutrinos using GPUs",
+  "body": "KM3Net - Real-time detection of neutrinos\r\n=========================================\r\n\r\nThis repository contains the software for the real-time detection of\r\nneutrinos in the new generation neutrino telescope.\r\n\r\nThis software package covers the implementation of a pipeline that\r\nanalyzes the hits that come out of the detector. The algorithm looks\r\nfor correlated hits and analyzes them to detect neutrinos passing\r\nthrough the detector.\r\n\r\n\r\nDocumentation\r\n-------------\r\nLink to the documentation will go here.\r\n\r\n\r\nInstallation\r\n------------\r\nInstallation is currently not required, if needed instructions will follow later.\r\n\r\n\r\nDependencies\r\n------------\r\n * Python 3 \r\n * PyCuda (https://mathema.tician.de/software/)\r\n\r\n\r\nExample usage\r\n-------------\r\nExample on how to use the software will go here.\r\n\r\n\r\nContributors\r\n------------\r\n\r\n* Daniela Remenska\r\n* Hanno Spreeuw\r\n* Ben van Werkhoven\r\n\r\n\r\n",
+  "note": "Don't delete this file! It's used internally to help with page regeneration."
+}

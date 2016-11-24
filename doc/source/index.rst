@@ -16,7 +16,6 @@ Contents:
 
 Introduction
 ============
-
 The software for the real-time detection of neutrinos in the new generation neutrino telescope.
 
 This software package covers the implementation of a pipeline that

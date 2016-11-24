@@ -88,7 +88,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Internal module documentation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#km3net-kernels-quadraticdifferencesparse">km3net.kernels.QuadraticDifferenceSparse</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#km3net-kernels-purgingsparse">km3net.kernels.PurgingSparse</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-kernel_tuner.util">km3net.util</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-km3net.util">km3net.util</a></li>
 </ul>
 </li>
 </ul>
@@ -264,62 +264,72 @@ slice to convert the indices from within the current slice to a global index.</l
 </dd></dl>
 
 </div>
-<div class="section" id="module-kernel_tuner.util">
-<span id="km3net-util"></span><h2>km3net.util<a class="headerlink" href="#module-kernel_tuner.util" title="Permalink to this headline">¶</a></h2>
-<p>Module for kernel tuner utility functions</p>
+<div class="section" id="module-km3net.util">
+<span id="km3net-util"></span><h2>km3net.util<a class="headerlink" href="#module-km3net.util" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
-<dt id="kernel_tuner.util.detect_language">
-<code class="descclassname">kernel_tuner.util.</code><code class="descname">detect_language</code><span class="sig-paren">(</span><em>lang</em>, <em>original_kernel</em><span class="sig-paren">)</span><a class="headerlink" href="#kernel_tuner.util.detect_language" title="Permalink to this definition">¶</a></dt>
-<dd><p>attempt to detect language from the kernel_string if not specified</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="kernel_tuner.util.get_grid_dimensions">
-<code class="descclassname">kernel_tuner.util.</code><code class="descname">get_grid_dimensions</code><span class="sig-paren">(</span><em>problem_size</em>, <em>params</em>, <em>grid_div_y</em>, <em>grid_div_x</em><span class="sig-paren">)</span><a class="headerlink" href="#kernel_tuner.util.get_grid_dimensions" title="Permalink to this definition">¶</a></dt>
-<dd><p>compute grid dims based on problem sizes and listed grid divisors</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="kernel_tuner.util.get_thread_block_dimensions">
-<code class="descclassname">kernel_tuner.util.</code><code class="descname">get_thread_block_dimensions</code><span class="sig-paren">(</span><em>params</em><span class="sig-paren">)</span><a class="headerlink" href="#kernel_tuner.util.get_thread_block_dimensions" title="Permalink to this definition">¶</a></dt>
-<dd><p>thread block size from tuning params, currently using convention</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="kernel_tuner.util.looks_like_a_filename">
-<code class="descclassname">kernel_tuner.util.</code><code class="descname">looks_like_a_filename</code><span class="sig-paren">(</span><em>original_kernel</em><span class="sig-paren">)</span><a class="headerlink" href="#kernel_tuner.util.looks_like_a_filename" title="Permalink to this definition">¶</a></dt>
-<dd><p>attempt to detect whether source code or a filename was passed</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="kernel_tuner.util.prepare_kernel_string">
-<code class="descclassname">kernel_tuner.util.</code><code class="descname">prepare_kernel_string</code><span class="sig-paren">(</span><em>original_kernel</em>, <em>params</em>, <em>grid=(1</em>, <em>1)</em><span class="sig-paren">)</span><a class="headerlink" href="#kernel_tuner.util.prepare_kernel_string" title="Permalink to this definition">¶</a></dt>
-<dd><p>prepend the kernel with a series of C preprocessor defines</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="kernel_tuner.util.prepare_list_of_files">
-<code class="descclassname">kernel_tuner.util.</code><code class="descname">prepare_list_of_files</code><span class="sig-paren">(</span><em>kernel_file_list</em>, <em>params</em>, <em>grid</em><span class="sig-paren">)</span><a class="headerlink" href="#kernel_tuner.util.prepare_list_of_files" title="Permalink to this definition">¶</a></dt>
-<dd><p>prepare the kernel string along with any additional files</p>
-<p>The first file in the list is allowed to include or read in the others
-The files beyond the first are considered additional files that may also contain tunable parameters</p>
-<p>For each file beyond the first this function creates a temporary file with
-preprocessors statements inserted. Occurences of the original filenames in the
-first file are replaced with their temporary counterparts.</p>
+<dt id="km3net.util.allocate_and_copy">
+<code class="descclassname">km3net.util.</code><code class="descname">allocate_and_copy</code><span class="sig-paren">(</span><em>arg</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.allocate_and_copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>helper func to allocate and copy GPU memory</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>kernel_file_list</strong> (<em>list(string)</em>) &#8211; A list of filenames. The first file in the list is
-allowed to read or include the other files in the list. All files may
-will have access to the tunable parameters.</li>
-<li><strong>params</strong> (<em>dict()</em>) &#8211; A dictionary with the tunable parameters for this particular
-instance.</li>
-<li><strong>grid</strong> (<em>tuple()</em>) &#8211; The grid dimensions for this instance. The grid dimensions are
-also inserted into the code as if they are tunable parameters for
-convenience.</li>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>arg</strong> (<em>numpy ndarray</em>) &#8211; A numpy array that should be moved to GPU memory. This function
+will allocate GPU memory equal to the size of this array and copy the
+entire array into the newly allocated GPU memory.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A PyCuda device allocation that represents the GPU memory allocation</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">pycuda.driver.DeviceAllocation</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="km3net.util.correlations_cpu">
+<code class="descclassname">km3net.util.</code><code class="descname">correlations_cpu</code><span class="sig-paren">(</span><em>check</em>, <em>x</em>, <em>y</em>, <em>z</em>, <em>ct</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.correlations_cpu" title="Permalink to this definition">¶</a></dt>
+<dd><p>function for computing the reference answer</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="km3net.util.correlations_cpu_2">
+<code class="descclassname">km3net.util.</code><code class="descname">correlations_cpu_2</code><span class="sig-paren">(</span><em>check</em>, <em>x</em>, <em>y</em>, <em>z</em>, <em>ct</em>, <em>roadwidth=None</em>, <em>tmax=None</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.correlations_cpu_2" title="Permalink to this definition">¶</a></dt>
+<dd><p>trying the obvious</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="km3net.util.correlations_cpu_3B">
+<code class="descclassname">km3net.util.</code><code class="descname">correlations_cpu_3B</code><span class="sig-paren">(</span><em>check</em>, <em>x</em>, <em>y</em>, <em>z</em>, <em>ct</em>, <em>roadwidth=100.0</em>, <em>tmax=100.0</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.correlations_cpu_3B" title="Permalink to this definition">¶</a></dt>
+<dd><p>function for computing the reference answer using only the 3B condition</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="km3net.util.generate_correlations_table">
+<code class="descclassname">km3net.util.</code><code class="descname">generate_correlations_table</code><span class="sig-paren">(</span><em>N</em>, <em>sliding_window_width</em>, <em>cutoff=2.87</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.generate_correlations_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>generate input data with an expected density of correlated hits</p>
+<p>This function is for testing purposes. It generates a correlations
+table of size N by sliding_window_width, which is filled with zeros
+or ones when two hits are considered correlated.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>N</strong> (<em>int</em>) &#8211; The number of hits to be considerd by this correlation table</li>
+<li><strong>sliding_window_width</strong> (<em>int</em>) &#8211; The sliding window width used for this
+correlation table.</li>
+<li><strong>cutoff</strong> (<em>float</em>) &#8211; The cutoff used for considering two hits correlated. This
+is actually the sigma of gaussian distribution, only values that are
+above the cutoff are considered a hit. Default value is 2.87, which
+should fill a correlations table with a density of roughly 0.0015.</li>
 </ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">correlations table of size N by sliding_window_width</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy ndarray of type numpy.uint8</p>
 </td>
 </tr>
 </tbody>
@@ -327,21 +337,95 @@ convenience.</li>
 </dd></dl>
 
 <dl class="function">
-<dt id="kernel_tuner.util.replace_param_occurrences">
-<code class="descclassname">kernel_tuner.util.</code><code class="descname">replace_param_occurrences</code><span class="sig-paren">(</span><em>string</em>, <em>params</em><span class="sig-paren">)</span><a class="headerlink" href="#kernel_tuner.util.replace_param_occurrences" title="Permalink to this definition">¶</a></dt>
-<dd><p>replace occurrences of the tuning params with their current value</p>
+<dt id="km3net.util.generate_large_correlations_table">
+<code class="descclassname">km3net.util.</code><code class="descname">generate_large_correlations_table</code><span class="sig-paren">(</span><em>N</em>, <em>sliding_window_width</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.generate_large_correlations_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>generate a larget set of input data with an expected density of correlated hits</p>
+<p>This function is for testing purposes. It generates a large correlations
+table of size N by sliding_window_width, which is filled with zeros
+or ones when two hits are considered correlated. This function has no cutoff
+parameter but uses generate_input_data() to get input data. The correlations
+table is reconstructed on the GPU, for which a kernel is compiled and ran
+on the fly.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>N</strong> (<em>int</em>) &#8211; The number of hits to be considerd by this correlation table</li>
+<li><strong>sliding_window_width</strong> (<em>int</em>) &#8211; The sliding window width used for this
+correlation table.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">correlations table of size N by sliding_window_width and an array
+storing the number of correlated hits per hit of size N.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy ndarray of type numpy.uint8, a numpy array of type numpy.int32</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
-<dt id="kernel_tuner.util.setup_block_and_grid">
-<code class="descclassname">kernel_tuner.util.</code><code class="descname">setup_block_and_grid</code><span class="sig-paren">(</span><em>dev</em>, <em>problem_size</em>, <em>grid_div_y</em>, <em>grid_div_x</em>, <em>params</em>, <em>instance_string</em>, <em>verbose</em><span class="sig-paren">)</span><a class="headerlink" href="#kernel_tuner.util.setup_block_and_grid" title="Permalink to this definition">¶</a></dt>
-<dd><p>compute thread block and grid dimensions for this kernel</p>
+<dt id="km3net.util.get_kernel_path">
+<code class="descclassname">km3net.util.</code><code class="descname">get_kernel_path</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.get_kernel_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>function that returns the location of the CUDA kernels on disk</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the location of the CUDA kernels</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
-<dt id="kernel_tuner.util.setup_kernel_strings">
-<code class="descclassname">kernel_tuner.util.</code><code class="descname">setup_kernel_strings</code><span class="sig-paren">(</span><em>kernel_name</em>, <em>original_kernel</em>, <em>params</em>, <em>grid</em>, <em>instance_string</em><span class="sig-paren">)</span><a class="headerlink" href="#kernel_tuner.util.setup_kernel_strings" title="Permalink to this definition">¶</a></dt>
-<dd><p>create configuration specific kernel string</p>
+<dt id="km3net.util.get_slice">
+<code class="descclassname">km3net.util.</code><code class="descname">get_slice</code><span class="sig-paren">(</span><em>x_all</em>, <em>y_all</em>, <em>z_all</em>, <em>ct_all</em>, <em>N</em>, <em>shift</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.get_slice" title="Permalink to this definition">¶</a></dt>
+<dd><p>return a smaller slice of the whole timeslice</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x_all</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The x-coordinates of the hits for the whole timeslice</li>
+<li><strong>y_all</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The y-coordinates of the hits for the whole timeslice</li>
+<li><strong>z_all</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The z-coordinates of the hits for the whole timeslice</li>
+<li><strong>ct_all</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The ct values of the hits for the whole timeslice</li>
+<li><strong>N</strong> (<em>int</em>) &#8211; The number of hits that this smaller slice should contain</li>
+<li><strong>shift</strong> (<em>int</em>) &#8211; The offset into the whole timeslice where this slice should start</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">x,y,z,ct for the smaller slice</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">tuple(numpy ndarray of type numpy.float32)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="km3net.util.init_pycuda">
+<code class="descclassname">km3net.util.</code><code class="descname">init_pycuda</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.init_pycuda" title="Permalink to this definition">¶</a></dt>
+<dd><p>helper func to init PyCuda</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The PyCuda context and a string containing the major and minor compute capability for the device</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">pycuda.driver.Context, string</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>

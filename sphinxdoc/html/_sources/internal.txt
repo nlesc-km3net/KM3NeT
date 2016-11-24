@@ -22,7 +22,8 @@ km3net.kernels.PurgingSparse
 
 km3net.util
 -----------
-.. automodule:: kernel_tuner.util
+.. automodule:: km3net.util
     :members:
+
 
 

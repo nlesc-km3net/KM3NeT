@@ -4,3 +4,4 @@ pycuda
 sphinx
 sphinx_rtd_theme
 pandas
+kernel_tuner

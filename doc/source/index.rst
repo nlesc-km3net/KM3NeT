@@ -38,8 +38,9 @@ Dependencies
  * Numpy
  * Sphinx
  * Sphinx readthedocs theme
+ * Kernel Tuner (https://github.com/benvanwerkhoven/kernel_tuner)
 
-Dependencies can be installed with `pip install -r requirements.txt`.
+Dependencies can be installed with ``pip install -r requirements.txt``.
 
 Example usage
 -------------

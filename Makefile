@@ -10,6 +10,7 @@ doc:
 	$(eval DIFF := $(shell git diff | wc -l))
 	$(eval BRANCH := $(shell git branch | grep '* master' | wc -l))
 	@echo $(DIFF)
+	@echo $(BRANCH)
 ifeq ($(DIFF),0)
 ifeq ($(BRANCH),1)
 	@echo git add doc/source/*

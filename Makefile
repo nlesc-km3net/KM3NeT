@@ -7,11 +7,10 @@ test:
 	nosetests -v
 
 doc:
-	DIFF=$(shell git diff | wc -l)
-	BRANCH=$(shell git branch | grep '* master' | wc -l)
-	YES=1
+	$(eval DIFF := $(shell git diff | wc -l))
+	$(eval BRANCH := $(shell git branch | grep '* master' | wc -l))
 ifeq ($(DIFF),0)
-ifeq ($(BRANCH),$(YES))
+ifeq ($(BRANCH),1)
 	@echo git add doc/source/*
 	@echo git commit -m "updating documentation"
 	@echo git push origin master

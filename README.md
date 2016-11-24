@@ -13,7 +13,7 @@ through the detector.
 
 Documentation
 -------------
-Link to the documentation will go here.
+Documentation can be found [here](https://benvanwerkhoven.github.io/KM3Net/sphinxdoc/html/index.html).
 
 
 Installation
@@ -23,8 +23,16 @@ Installation is currently not required, if needed instructions will follow later
 
 Dependencies
 ------------
- * Python 3 
+ * Python 3
  * PyCuda (https://mathema.tician.de/software/)
+ * Pandas
+ * Scipy
+ * Numpy
+ * Sphinx
+ * Sphinx readthedocs theme
+ * Kernel Tuner (https://github.com/benvanwerkhoven/kernel_tuner)
+
+Dependencies can be installed with ``pip install -r requirements.txt``.
 
 
 Example usage

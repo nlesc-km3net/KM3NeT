@@ -129,6 +129,7 @@ def generate_large_correlations_table(N, sliding_window_width):
         :returns: correlations table of size N by sliding_window_width and an array
             storing the number of correlated hits per hit of size N.
         :rtype: numpy ndarray of type numpy.uint8, a numpy array of type numpy.int32
+
     """
     #generating a very large correlations table takes hours on the CPU
     #reconstruct input data on the GPU
@@ -219,11 +220,12 @@ def generate_input_data(N, factor=2000.0):
         :type N: int
 
         :param factor: Optionally specify a factor to modify the correlation
-        density of the hits. Default=2000.0
+            density of the hits. Default=2000.0
         :type factor: float
 
         :returns: N hits stored as x,y,z,ct
         :rtype: tuple(numpy ndarray of type numpy.float32)
+
     """
     x = np.random.normal(0.2, 0.1, N).astype(np.float32)
     y = np.random.normal(0.2, 0.1, N).astype(np.float32)

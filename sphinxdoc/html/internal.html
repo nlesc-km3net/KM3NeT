@@ -288,20 +288,101 @@ entire array into the newly allocated GPU memory.</td>
 
 <dl class="function">
 <dt id="km3net.util.correlations_cpu">
-<code class="descclassname">km3net.util.</code><code class="descname">correlations_cpu</code><span class="sig-paren">(</span><em>check</em>, <em>x</em>, <em>y</em>, <em>z</em>, <em>ct</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.correlations_cpu" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">km3net.util.</code><code class="descname">correlations_cpu</code><span class="sig-paren">(</span><em>correlations</em>, <em>x</em>, <em>y</em>, <em>z</em>, <em>ct</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.correlations_cpu" title="Permalink to this definition">¶</a></dt>
 <dd><p>function for computing the reference answer</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="km3net.util.correlations_cpu_2">
-<code class="descclassname">km3net.util.</code><code class="descname">correlations_cpu_2</code><span class="sig-paren">(</span><em>check</em>, <em>x</em>, <em>y</em>, <em>z</em>, <em>ct</em>, <em>roadwidth=None</em>, <em>tmax=None</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.correlations_cpu_2" title="Permalink to this definition">¶</a></dt>
-<dd><p>trying the obvious</p>
+<p>This function is the CPU version of the quadratic difference algorithm.
+It computes the correlations based on the quadratic difference criterion.
+This function is mainly for testing and verification, for large datasets
+use the GPU kernel.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>correlations</strong> (<em>a 2d numpy array of type numpy.uint8</em>) &#8211; A correlations table of size N by sliding_window_width
+used for storing the result, which is also returned.</li>
+<li><strong>x</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The x-coordinates of the hits</li>
+<li><strong>y</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The y-coordinates of the hits</li>
+<li><strong>z</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The z-coordinates of the hits</li>
+<li><strong>ct</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The ct values of the hits</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">correlations table of size N by sliding_window_width.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy 2d array of type numpy.uint8</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
 <dt id="km3net.util.correlations_cpu_3B">
-<code class="descclassname">km3net.util.</code><code class="descname">correlations_cpu_3B</code><span class="sig-paren">(</span><em>check</em>, <em>x</em>, <em>y</em>, <em>z</em>, <em>ct</em>, <em>roadwidth=100.0</em>, <em>tmax=100.0</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.correlations_cpu_3B" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">km3net.util.</code><code class="descname">correlations_cpu_3B</code><span class="sig-paren">(</span><em>correlations</em>, <em>x</em>, <em>y</em>, <em>z</em>, <em>ct</em>, <em>roadwidth=90.0</em>, <em>tmax=0.0</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.correlations_cpu_3B" title="Permalink to this definition">¶</a></dt>
 <dd><p>function for computing the reference answer using only the 3B condition</p>
+<p>This function computes the Match 3B criterion instead of the quadratic
+difference criterion. The 3B criterion is similar to the quadratic difference
+criterion, but is also considers a maximum distance for two hits to be
+correlated. This distance is based on the parameter &#8216;roadwidth&#8217;, which
+is the assumed maximum distance a photon can travel through seawater.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>correlations</strong> (<em>a 2d numpy array of type numpy.uint8</em>) &#8211; A correlations table of size N by sliding_window_width
+used for storing the result, which is also returned.</li>
+<li><strong>x</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The x-coordinates of the hits</li>
+<li><strong>y</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The y-coordinates of the hits</li>
+<li><strong>z</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The z-coordinates of the hits</li>
+<li><strong>ct</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The ct values of the hits</li>
+<li><strong>roadwidth</strong> (<em>float</em>) &#8211; The roadwidth used in the 3B criterion, the assumed
+distance a photon can travel through seawater. Default is 90.0.</li>
+<li><strong>tmax</strong> (<em>float</em>) &#8211; The maximum time between two hits for them to always be
+considered correlated. By default 0.0.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">correlations table of size N by sliding_window_width.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy 2d array of type numpy.uint8</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="km3net.util.create_sparse_matrix">
+<code class="descclassname">km3net.util.</code><code class="descname">create_sparse_matrix</code><span class="sig-paren">(</span><em>correlations</em>, <em>sums</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.create_sparse_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>call GPU kernel to transform a correlations table into a spare matrix</p>
+<p>This function compiles the dense2sparse GPU kernel and calls it convert a
+densely stored correlations table into a sparsely stored correlation matrix.
+The sparse notation used is CSR.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>correlations</strong> (<em>a 2d numpy array of type numpy.uint8</em>) &#8211; A correlations table of size N by sliding_window_width</li>
+<li><strong>sums</strong> (<em>numpy array of type numpy.int32</em>) &#8211; An array with the number of correlated hits per hit</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">This function returns three array that together form the sparse matrix
+- row_idx: the row index of each entry in the column index array
+- col_idx: the column index of each correlation in the sparse matrix
+- prefix_sums: the offset into the column index array for each row</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy ndarray of type numpy.int32</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -331,6 +412,41 @@ should fill a correlations table with a density of roughly 0.0015.</li>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy ndarray of type numpy.uint8</p>
 </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="km3net.util.generate_input_data">
+<code class="descclassname">km3net.util.</code><code class="descname">generate_input_data</code><span class="sig-paren">(</span><em>N</em>, <em>factor=2000.0</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.generate_input_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>generate input data</p>
+<p>This function generates hits stored as x,y,z-coordinates
+and ct values from random noise. The default factor should
+result in a density of about 0.002 when using a sliding
+window width of 1500, where density is defined
+as the total number of correlated hits / (N*sliding_window_width).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>N</strong> (<em>int</em>) &#8211; The number of hits to generate</li>
+<li><strong>factor</strong> &#8211; Optionally specify a factor to modify the correlation</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>density of the hits. Default=2000.0
+:type factor: float</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">N hits stored as x,y,z,ct</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">tuple(numpy ndarray of type numpy.float32)</td>
 </tr>
 </tbody>
 </table>
@@ -369,6 +485,27 @@ storing the number of correlated hits per hit of size N.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="km3net.util.get_full_matrix">
+<code class="descclassname">km3net.util.</code><code class="descname">get_full_matrix</code><span class="sig-paren">(</span><em>correlations</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.get_full_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>obtain a full correlation matrix from the correlations table</p>
+<p>This function should only be used for testing purposes on small
+correlations tables as the full correlations matrix is typically
+huge and nearly empty.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>correlations</strong> (<em>a 2d numpy array of type numpy.uint8</em>) &#8211; A correlations table of size N by sliding_window_width</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A full, densely stored, N by N correlations matrix</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">a 2d numpy array of type numpy.uint8</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="km3net.util.get_kernel_path">
 <code class="descclassname">km3net.util.</code><code class="descname">get_kernel_path</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.get_kernel_path" title="Permalink to this definition">¶</a></dt>
 <dd><p>function that returns the location of the CUDA kernels on disk</p>
@@ -379,6 +516,36 @@ storing the number of correlated hits per hit of size N.</p>
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the location of the CUDA kernels</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="km3net.util.get_real_input_data">
+<code class="descclassname">km3net.util.</code><code class="descname">get_real_input_data</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.get_real_input_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read input data from disk</p>
+<p>Read a timeslice of input data from a file stored on disk.
+The file format to be used is a text file that stores one
+hit per row in a text file. The first column stores the
+time the hit occured in nanoseconds. Followed by three
+columns that store the x,y,z coordinates of where the
+hit was measured in meters. The hits are assumed to be
+stored in ascending order by the time the hit occured, so
+earliest hit first.</p>
+<p>This routine also multiplies the time values with the speed of light.
+These values are therefore called ct and are stored in meters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>string</em>) &#8211; The path and the filename of the file that contains the input data.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">N,x,y,z,ct. N is the number of hits that were retrieved from the file.
+x,y,z are the coordinates of the hit in meters and ct the time multiplied
+by the speed of light, also in meters.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">tuple(int, numpy ndarray of type numpy.float32)</td>
 </tr>
 </tbody>
 </table>

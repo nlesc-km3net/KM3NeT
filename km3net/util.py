@@ -7,8 +7,6 @@ from kernel_tuner import run_kernel
 
 import pycuda.driver as drv
 
-data_dir = '/var/scratch/bwn200/KM3Net/'
-
 def get_kernel_path():
     """ function that returns the location of the CUDA kernels on disk
 
@@ -155,22 +153,48 @@ def generate_large_correlations_table(N, sliding_window_width):
     return correlations, sums
 
 def create_sparse_matrix(correlations, sums):
+    """ call GPU kernel to transform a correlations table into a spare matrix
+
+        This function compiles the dense2sparse GPU kernel and calls it convert a
+        densely stored correlations table into a sparsely stored correlation matrix.
+        The sparse notation used is CSR.
+
+        :param correlations: A correlations table of size N by sliding_window_width
+        :type correlations: a 2d numpy array of type numpy.uint8
+
+        :param sums: An array with the number of correlated hits per hit
+        :type sums: numpy array of type numpy.int32
+
+        :returns: This function returns three array that together form the sparse matrix
+            - row_idx: the row index of each entry in the column index array
+            - col_idx: the column index of each correlation in the sparse matrix
+            - prefix_sums: the offset into the column index array for each row
+        :rtype: numpy ndarray of type numpy.int32
+    """
     N = np.int32(correlations.shape[0])
     prefix_sums = np.cumsum(sums).astype(np.int32)
     total_correlated_hits = np.sum(sums.sum())
     row_idx = np.zeros(total_correlated_hits).astype(np.int32)
     col_idx = np.zeros(total_correlated_hits).astype(np.int32)
-
     with open(get_kernel_path()+'dense2sparse.cu', 'r') as f:
         kernel_string = f.read()
-
     args = [row_idx, col_idx, prefix_sums, correlations, N]
     data = run_kernel("dense2sparse_kernel", kernel_string, (N,1), args, {"block_size_x": 256})
-
     return data[0], data[1], prefix_sums
 
 def get_full_matrix(correlations):
-    #obtain a true correlation matrix from the correlations table
+    """ obtain a full correlation matrix from the correlations table
+
+        This function should only be used for testing purposes on small
+        correlations tables as the full correlations matrix is typically
+        huge and nearly empty.
+
+        :param correlations: A correlations table of size N by sliding_window_width
+        :type correlations: a 2d numpy array of type numpy.uint8
+
+        :returns: A full, densely stored, N by N correlations matrix
+        :rtype: a 2d numpy array of type numpy.uint8
+    """
     n = correlations.shape[1]
     matrix = np.zeros((n,n), dtype=np.uint8)
     for i in range(n):
@@ -182,21 +206,56 @@ def get_full_matrix(correlations):
                     matrix[col,i] = 1
     return matrix
 
-def generate_input_data(N):
+def generate_input_data(N, factor=2000.0):
+    """ generate input data
+
+        This function generates hits stored as x,y,z-coordinates
+        and ct values from random noise. The default factor should
+        result in a density of about 0.002 when using a sliding
+        window width of 1500, where density is defined
+        as the total number of correlated hits / (N*sliding_window_width).
+
+        :param N: The number of hits to generate
+        :type N: int
+
+        :param factor: Optionally specify a factor to modify the correlation
+        density of the hits. Default=2000.0
+        :type factor: float
+
+        :returns: N hits stored as x,y,z,ct
+        :rtype: tuple(numpy ndarray of type numpy.float32)
+    """
     x = np.random.normal(0.2, 0.1, N).astype(np.float32)
     y = np.random.normal(0.2, 0.1, N).astype(np.float32)
     z = np.random.normal(0.2, 0.1, N).astype(np.float32)
-    ct = 2000*np.random.normal(0.5, 0.06, N).astype(np.float32)  #replace 2000 with 5 for the new density
-
-    #print("x", x[:10])
-    #print("y", y[:10])
-    #print("z", z[:10])
-    #print("ct", ct[:10])
+    ct = factor*np.random.normal(0.5, 0.06, N).astype(np.float32)  #replace 2000 with 5 for the new density
     return x,y,z,ct
 
 
 def get_real_input_data(filename):
-    data = pandas.read_csv(data_dir + filename, sep=' ', header=None)
+    """ Read input data from disk
+
+        Read a timeslice of input data from a file stored on disk.
+        The file format to be used is a text file that stores one
+        hit per row in a text file. The first column stores the
+        time the hit occured in nanoseconds. Followed by three
+        columns that store the x,y,z coordinates of where the
+        hit was measured in meters. The hits are assumed to be
+        stored in ascending order by the time the hit occured, so
+        earliest hit first.
+
+        This routine also multiplies the time values with the speed of light.
+        These values are therefore called ct and are stored in meters.
+
+        :param filename: The path and the filename of the file that contains the input data.
+        :type filename: string
+
+        :returns: N,x,y,z,ct. N is the number of hits that were retrieved from the file.
+            x,y,z are the coordinates of the hit in meters and ct the time multiplied
+            by the speed of light, also in meters.
+        :rtype: tuple(int, numpy ndarray of type numpy.float32)
+    """
+    data = pandas.read_csv(filename, sep=' ', header=None)
 
     t = np.array(data[0]).astype(np.float32)
     t = t / 1e9 # convert from nano seconds to seconds
@@ -217,16 +276,50 @@ def get_real_input_data(filename):
     return N,x,y,z,ct
 
 
-def correlations_cpu_3B(check, x, y, z, ct, roadwidth=100.0, tmax=100.0):
-    """function for computing the reference answer using only the 3B condition"""
-    index_of_refrac = 1.3800851282
+def correlations_cpu_3B(correlations, x, y, z, ct, roadwidth=90.0, tmax=0.0):
+    """ function for computing the reference answer using only the 3B condition
+
+        This function computes the Match 3B criterion instead of the quadratic
+        difference criterion. The 3B criterion is similar to the quadratic difference
+        criterion, but is also considers a maximum distance for two hits to be
+        correlated. This distance is based on the parameter 'roadwidth', which
+        is the assumed maximum distance a photon can travel through seawater.
+
+        :param correlations: A correlations table of size N by sliding_window_width
+            used for storing the result, which is also returned.
+        :type correlations: a 2d numpy array of type numpy.uint8
+
+        :param x: The x-coordinates of the hits
+        :type x: numpy ndarray of type numpy.float32
+
+        :param y: The y-coordinates of the hits
+        :type y: numpy ndarray of type numpy.float32
+
+        :param z: The z-coordinates of the hits
+        :type z: numpy ndarray of type numpy.float32
+
+        :param ct: The ct values of the hits
+        :type ct: numpy ndarray of type numpy.float32
+
+        :param roadwidth: The roadwidth used in the 3B criterion, the assumed
+            distance a photon can travel through seawater. Default is 90.0.
+        :type roadwidth: float
+
+        :param tmax: The maximum time between two hits for them to always be
+            considered correlated. By default 0.0.
+        :type tmax: float
+
+        :returns: correlations table of size N by sliding_window_width.
+        :rtype: numpy 2d array of type numpy.uint8
+    """
+    index_of_refrac = 1.3800851282 #also known as theta, angle of emitted Cherenkov light
     tan_theta_c     = np.sqrt((index_of_refrac-1.0) * (index_of_refrac+1.0) )
     cos_theta_c     = 1.0 / index_of_refrac
     sin_theta_c     = tan_theta_c * cos_theta_c
-    c               = 0.299792458  # m/ns
+    c               = 0.299792458  # m/ns, use scipy.constants.c instead
     inverse_c       = 1.0/c
 
-    TMaxExtra = tmax        #what is the purpose of tmax exactly?
+    TMaxExtra = tmax
 
     tt2 = tan_theta_c**2
     D0 = roadwidth          # in meters
@@ -271,39 +364,45 @@ def correlations_cpu_3B(check, x, y, z, ct, roadwidth=100.0, tmax=100.0):
 
         return difft >= dmin * inverse_c - TMaxExtra
 
-    for i in range(check.shape[1]):
-        for j in range(i + 1, i + check.shape[0] + 1):
-            if j < check.shape[1]:
+    for i in range(correlations.shape[1]):
+        for j in range(i + 1, i + correlations.shape[0] + 1):
+            if j < correlations.shape[1]:
                 if test_3B_condition(t[i],x[i],y[i],z[i],t[j],x[j],y[j],z[j]):
-                   check[j - i - 1, i] = 1
-
-                #if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
-                #   check[j - i - 1, i] = 1
-    return check
+                   correlations[j - i - 1, i] = 1
+    return correlations
 
 
-def correlations_cpu(check, x, y, z, ct):
-    """function for computing the reference answer"""
-    for i in range(check.shape[1]):
-        for j in range(i + 1, i + check.shape[0] + 1):
-            if j < check.shape[1]:
+def correlations_cpu(correlations, x, y, z, ct):
+    """ function for computing the reference answer
+
+        This function is the CPU version of the quadratic difference algorithm.
+        It computes the correlations based on the quadratic difference criterion.
+        This function is mainly for testing and verification, for large datasets
+        use the GPU kernel.
+
+        :param correlations: A correlations table of size N by sliding_window_width
+            used for storing the result, which is also returned.
+        :type correlations: a 2d numpy array of type numpy.uint8
+
+        :param x: The x-coordinates of the hits
+        :type x: numpy ndarray of type numpy.float32
+
+        :param y: The y-coordinates of the hits
+        :type y: numpy ndarray of type numpy.float32
+
+        :param z: The z-coordinates of the hits
+        :type z: numpy ndarray of type numpy.float32
+
+        :param ct: The ct values of the hits
+        :type ct: numpy ndarray of type numpy.float32
+
+        :returns: correlations table of size N by sliding_window_width.
+        :rtype: numpy 2d array of type numpy.uint8
+    """
+    for i in range(correlations.shape[1]):
+        for j in range(i + 1, i + correlations.shape[0] + 1):
+            if j < correlations.shape[1]:
                 if (ct[i]-ct[j])**2 < (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2:
-                   check[j - i - 1, i] = 1
-    return check
-
-def correlations_cpu_2(check, x, y, z, ct, roadwidth=None, tmax=None):
-    """trying the obvious"""
-    for i in range(check.shape[1]):
-        for j in range(i + 1, i + check.shape[0] + 1):
-            if j < check.shape[1]:
-                d_squared = (x[i]-x[j])**2  + (y[i] - y[j])**2 + (z[i] - z[j])**2
-                ct_squared = (ct[i]-ct[j])**2
-                condition_1 = ct_squared < d_squared        #needs to be True
-                condition_2 = ct_squared*2 > d_squared      #needs to be True as well
-
-                if condition_1 and condition_2:
-                   check[j - i - 1, i] = 1
-    return check
-
-
+                   correlations[j - i - 1, i] = 1
+    return correlations
 

@@ -4,5 +4,5 @@ doc/build/*
 doc/create_doc.sh
 /dist
 *.egg-info
-
+/temp
 

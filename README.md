@@ -22,7 +22,7 @@ Clone the repository
     ``git clone git@github.com:benvanwerkhoven/KM3Net.git``  
 Change into the top-level directory  
     ``cd KM3Net``  
-Install dependencies  
+Install using  
     ``pip install -r requirements.txt``  
     ``pip install .``
 

@@ -372,10 +372,13 @@ The sparse notation used is CSR.</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">This function returns three array that together form the sparse matrix
-- row_idx: the row index of each entry in the column index array
-- col_idx: the column index of each correlation in the sparse matrix
-- prefix_sums: the offset into the column index array for each row</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>This function returns three arrays that together form the sparse matrix</p>
+<ul class="simple">
+<li>row_idx: the row index of each entry in the column index array</li>
+<li>col_idx: the column index of each correlation in the sparse matrix</li>
+<li>prefix_sums: the offset into the column index array for each row</li>
+</ul>
+</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy ndarray of type numpy.int32</p>
@@ -585,6 +588,34 @@ by the speed of light, also in meters.</td>
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The PyCuda context and a string containing the major and minor compute capability for the device</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">pycuda.driver.Context, string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="km3net.util.insert_clique">
+<code class="descclassname">km3net.util.</code><code class="descname">insert_clique</code><span class="sig-paren">(</span><em>dense_matrix</em>, <em>sliding_window_width=1500</em>, <em>clique_size=10</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.insert_clique" title="Permalink to this definition">¶</a></dt>
+<dd><p>generate clique indices and insert into dense matrix</p>
+<p>Insert a clique into a dense matrix for testing purposes. This function attemps to
+generate a clique of size clique_size, but may generate a clique that is slightly
+smaller.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dense_matrix</strong> (<em>2d numpy array</em>) &#8211; A densly stored correlation matrix, size N by N.</li>
+<li><strong>sliding_window_width</strong> (<em>int</em>) &#8211; the sliding window width, 1500 by default.</li>
+<li><strong>clique_size</strong> (<em>int</em>) &#8211; The size of the clique that is to be insered into the data, 10 by default.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The dense matrix, a list of clique indices, and the size of the inserted clique.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">tuple(numpy.ndarray, list, int)</p>
+</td>
 </tr>
 </tbody>
 </table>

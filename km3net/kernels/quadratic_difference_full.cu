@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <inttypes.h>
+#include <float.h>
 
 #ifndef tile_size_x
   #define tile_size_x 1
@@ -70,7 +71,7 @@ __global__ void quadratic_difference_full(int *__restrict__ row_idx, int *__rest
             sh_y[k] = LDG(y,bx+k-window_width);
             sh_z[k] = LDG(z,bx+k-window_width);
         } else {
-            sh_ct[k] = 0.0f;
+            sh_ct[k] = -FLT_MAX;  //this values ensures out-of-bound hits won't be correlated
             sh_x[k] = 0.0f;
             sh_y[k] = 0.0f;
             sh_z[k] = 0.0f;
@@ -84,7 +85,7 @@ __global__ void quadratic_difference_full(int *__restrict__ row_idx, int *__rest
     }
     #pragma unroll
     for (int ti=0; ti<tile_size_x; ti++) {
-        if (bx+i+ti < N) {
+        if (bx+i+ti*block_size_x-1 > 0 && bx+i+ti*block_size_x-1 < N) {
             offset[ti] = prefix_sums[bx+i+ti*block_size_x-1];
         }
     }
@@ -102,6 +103,7 @@ __global__ void quadratic_difference_full(int *__restrict__ row_idx, int *__rest
     #endif
 
     //keep the most often used values in registers
+    #pragma unroll
     for (int ti=0; ti<tile_size_x; ti++) {
         l_ct[ti] = sh_ct[i+ti*block_size_x+window_width];
         l_x[ti] = sh_x[i+ti*block_size_x+window_width];

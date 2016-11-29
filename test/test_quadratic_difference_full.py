@@ -11,6 +11,7 @@ from kernel_tuner import run_kernel
 def test_quadratic_difference_full_sums_impl1():
     test_quadratic_difference_full_sums("quadratic_difference_full")
 
+@nottest
 def test_quadratic_difference_full_sums_impl2():
     test_quadratic_difference_full_sums("quadratic_difference_full_shfl")
 
@@ -63,6 +64,7 @@ def test_quadratic_difference_full_sums(kernel_name):
 def test_quadratic_difference_full_sparse_matrix_impl1():
     test_quadratic_difference_full_sparse_matrix("quadratic_difference_full")
 
+@nottest
 def test_quadratic_difference_full_sparse_matrix_impl2():
     test_quadratic_difference_full_sparse_matrix("quadratic_difference_full_shfl")
 
@@ -75,8 +77,8 @@ def test_quadratic_difference_full_sparse_matrix(kernel_name):
     with open(get_kernel_path()+'quadratic_difference_full.cu', 'r') as f:
         kernel_string = f.read()
 
-    N = np.int32(600)
-    sliding_window_width = np.int32(300)
+    N = np.int32(101)
+    sliding_window_width = np.int32(13)
     problem_size = (N, 1)
 
     x,y,z,ct = generate_input_data(N)
@@ -105,22 +107,41 @@ def test_quadratic_difference_full_sparse_matrix(kernel_name):
     row_idx = answer[0]
     print("row_idx")
     print(row_idx)
+    col_idx = answer[1]
+    print("col_idx")
+    print(col_idx)
 
     col_idx = answer[1]
     answer = csr_matrix((np.ones_like(row_idx), (row_idx, col_idx)), shape=(N,N))
 
     print("reference")
-    print(zip(reference.nonzero()[0], reference.nonzero()[1]) )
+    print(list(zip(reference.nonzero()[0], reference.nonzero()[1])))
 
     print("answer")
-    print(zip(answer.nonzero()[0], answer.nonzero()[1]) )
+    print(list(zip(answer.nonzero()[0], answer.nonzero()[1])))
 
     diff = reference - answer
 
     print("diff")
-    print(zip(diff.nonzero()[0], diff.nonzero()[1]))
+    print(list(zip(diff.nonzero()[0], diff.nonzero()[1])))
+
+    diff2 = answer - reference
+
+    print("diff2")
+    print(list(zip(diff2.nonzero()[0], diff2.nonzero()[1])))
+
 
     print("diff.nnz", diff.nnz)
 
-    assert diff.nnz == 0
+    if False:
+        from matplotlib import pyplot
+        f, (ax1, ax2) = pyplot.subplots(nrows=1, ncols=2, sharex=True, sharey=True)
+        f.tight_layout()
+        ax1.set_adjustable('box-forced')
+        ax2.set_adjustable('box-forced')
+        ax1.imshow(get_full_matrix(reference))
+        ax2.imshow(get_full_matrix(answer))
+        pyplot.show()
 
+    assert diff.nnz == 0
+    assert diff2.nnz == 0

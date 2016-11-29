@@ -10,8 +10,8 @@ import pycuda.driver as drv
 def get_kernel_path():
     """ function that returns the location of the CUDA kernels on disk
 
-        :returns: the location of the CUDA kernels
-        :rtype: string
+    :returns: the location of the CUDA kernels
+    :rtype: string
     """
     path = "/".join(os.path.dirname(os.path.realpath(__file__)).split('/')[:-1])
     return path+'/km3net/kernels/'
@@ -19,26 +19,26 @@ def get_kernel_path():
 def get_slice(x_all, y_all, z_all, ct_all, N, shift):
     """ return a smaller slice of the whole timeslice
 
-        :param x_all: The x-coordinates of the hits for the whole timeslice
-        :type x_all: numpy ndarray of type numpy.float32
+    :param x_all: The x-coordinates of the hits for the whole timeslice
+    :type x_all: numpy ndarray of type numpy.float32
 
-        :param y_all: The y-coordinates of the hits for the whole timeslice
-        :type y_all: numpy ndarray of type numpy.float32
+    :param y_all: The y-coordinates of the hits for the whole timeslice
+    :type y_all: numpy ndarray of type numpy.float32
 
-        :param z_all: The z-coordinates of the hits for the whole timeslice
-        :type z_all: numpy ndarray of type numpy.float32
+    :param z_all: The z-coordinates of the hits for the whole timeslice
+    :type z_all: numpy ndarray of type numpy.float32
 
-        :param ct_all: The ct values of the hits for the whole timeslice
-        :type ct_all: numpy ndarray of type numpy.float32
+    :param ct_all: The ct values of the hits for the whole timeslice
+    :type ct_all: numpy ndarray of type numpy.float32
 
-        :param N: The number of hits that this smaller slice should contain
-        :type N: int
+    :param N: The number of hits that this smaller slice should contain
+    :type N: int
 
-        :param shift: The offset into the whole timeslice where this slice should start
-        :type shift: int
+    :param shift: The offset into the whole timeslice where this slice should start
+    :type shift: int
 
-        :returns: x,y,z,ct for the smaller slice
-        :rtype: tuple(numpy ndarray of type numpy.float32)
+    :returns: x,y,z,ct for the smaller slice
+    :rtype: tuple(numpy ndarray of type numpy.float32)
     """
     x   = x_all[shift:shift+N]
     y   = y_all[shift:shift+N]
@@ -49,8 +49,8 @@ def get_slice(x_all, y_all, z_all, ct_all, N, shift):
 def init_pycuda():
     """ helper func to init PyCuda
 
-        :returns: The PyCuda context and a string containing the major and minor compute capability for the device
-        :rtype: pycuda.driver.Context, string
+    :returns: The PyCuda context and a string containing the major and minor compute capability for the device
+    :rtype: pycuda.driver.Context, string
     """
     drv.init()
     context = drv.Device(0).make_context()
@@ -61,13 +61,13 @@ def init_pycuda():
 def allocate_and_copy(arg):
     """ helper func to allocate and copy GPU memory
 
-        :param arg: A numpy array that should be moved to GPU memory. This function
+    :param arg: A numpy array that should be moved to GPU memory. This function
             will allocate GPU memory equal to the size of this array and copy the
             entire array into the newly allocated GPU memory.
-        :type arg: numpy ndarray
+    :type arg: numpy ndarray
 
-        :returns: A PyCuda device allocation that represents the GPU memory allocation
-        :rtype: pycuda.driver.DeviceAllocation
+    :returns: A PyCuda device allocation that represents the GPU memory allocation
+    :rtype: pycuda.driver.DeviceAllocation
     """
     gpu_arg = drv.mem_alloc(arg.nbytes)
     drv.memcpy_htod(gpu_arg, arg)
@@ -77,25 +77,25 @@ def allocate_and_copy(arg):
 def generate_correlations_table(N, sliding_window_width, cutoff=2.87):
     """ generate input data with an expected density of correlated hits
 
-        This function is for testing purposes. It generates a correlations
-        table of size N by sliding_window_width, which is filled with zeros
-        or ones when two hits are considered correlated.
+    This function is for testing purposes. It generates a correlations
+    table of size N by sliding_window_width, which is filled with zeros
+    or ones when two hits are considered correlated.
 
-        :param N: The number of hits to be considerd by this correlation table
-        :type N: int
+    :param N: The number of hits to be considerd by this correlation table
+    :type N: int
 
-        :param sliding_window_width: The sliding window width used for this
+    :param sliding_window_width: The sliding window width used for this
             correlation table.
-        :type sliding_window_width: int
+    :type sliding_window_width: int
 
-        :param cutoff: The cutoff used for considering two hits correlated. This
+    :param cutoff: The cutoff used for considering two hits correlated. This
             is actually the sigma of gaussian distribution, only values that are
             above the cutoff are considered a hit. Default value is 2.87, which
             should fill a correlations table with a density of roughly 0.0015.
-        :type cutoff: float
+    :type cutoff: float
 
-        :returns: correlations table of size N by sliding_window_width
-        :rtype: numpy ndarray of type numpy.uint8
+    :returns: correlations table of size N by sliding_window_width
+    :rtype: numpy ndarray of type numpy.uint8
 
     """
     correlations = np.random.randn(sliding_window_width, N)
@@ -112,23 +112,23 @@ def generate_correlations_table(N, sliding_window_width, cutoff=2.87):
 def generate_large_correlations_table(N, sliding_window_width):
     """ generate a larget set of input data with an expected density of correlated hits
 
-        This function is for testing purposes. It generates a large correlations
-        table of size N by sliding_window_width, which is filled with zeros
-        or ones when two hits are considered correlated. This function has no cutoff
-        parameter but uses generate_input_data() to get input data. The correlations
-        table is reconstructed on the GPU, for which a kernel is compiled and ran
-        on the fly.
+    This function is for testing purposes. It generates a large correlations
+    table of size N by sliding_window_width, which is filled with zeros
+    or ones when two hits are considered correlated. This function has no cutoff
+    parameter but uses generate_input_data() to get input data. The correlations
+    table is reconstructed on the GPU, for which a kernel is compiled and ran
+    on the fly.
 
-        :param N: The number of hits to be considerd by this correlation table
-        :type N: int
+    :param N: The number of hits to be considerd by this correlation table
+    :type N: int
 
-        :param sliding_window_width: The sliding window width used for this
+    :param sliding_window_width: The sliding window width used for this
             correlation table.
-        :type sliding_window_width: int
+    :type sliding_window_width: int
 
-        :returns: correlations table of size N by sliding_window_width and an array
+    :returns: correlations table of size N by sliding_window_width and an array
             storing the number of correlated hits per hit of size N.
-        :rtype: numpy ndarray of type numpy.uint8, a numpy array of type numpy.int32
+    :rtype: numpy ndarray of type numpy.uint8, a numpy array of type numpy.int32
 
     """
     #generating a very large correlations table takes hours on the CPU
@@ -156,21 +156,23 @@ def generate_large_correlations_table(N, sliding_window_width):
 def create_sparse_matrix(correlations, sums):
     """ call GPU kernel to transform a correlations table into a spare matrix
 
-        This function compiles the dense2sparse GPU kernel and calls it convert a
-        densely stored correlations table into a sparsely stored correlation matrix.
-        The sparse notation used is CSR.
+    This function compiles the dense2sparse GPU kernel and calls it convert a
+    densely stored correlations table into a sparsely stored correlation matrix.
+    The sparse notation used is CSR.
 
-        :param correlations: A correlations table of size N by sliding_window_width
-        :type correlations: a 2d numpy array of type numpy.uint8
+    :param correlations: A correlations table of size N by sliding_window_width
+    :type correlations: a 2d numpy array of type numpy.uint8
 
-        :param sums: An array with the number of correlated hits per hit
-        :type sums: numpy array of type numpy.int32
+    :param sums: An array with the number of correlated hits per hit
+    :type sums: numpy array of type numpy.int32
 
-        :returns: This function returns three array that together form the sparse matrix
-            - row_idx: the row index of each entry in the column index array
-            - col_idx: the column index of each correlation in the sparse matrix
-            - prefix_sums: the offset into the column index array for each row
-        :rtype: numpy ndarray of type numpy.int32
+    :returns: This function returns three arrays that together form the sparse matrix
+
+        * row_idx: the row index of each entry in the column index array
+        * col_idx: the column index of each correlation in the sparse matrix
+        * prefix_sums: the offset into the column index array for each row
+
+    :rtype: numpy ndarray of type numpy.int32
     """
     N = np.int32(correlations.shape[0])
     prefix_sums = np.cumsum(sums).astype(np.int32)
@@ -186,15 +188,15 @@ def create_sparse_matrix(correlations, sums):
 def get_full_matrix(correlations):
     """ obtain a full correlation matrix from the correlations table
 
-        This function should only be used for testing purposes on small
-        correlations tables as the full correlations matrix is typically
-        huge and nearly empty.
+    This function should only be used for testing purposes on small
+    correlations tables as the full correlations matrix is typically
+    huge and nearly empty.
 
-        :param correlations: A correlations table of size N by sliding_window_width
-        :type correlations: a 2d numpy array of type numpy.uint8
+    :param correlations: A correlations table of size N by sliding_window_width
+    :type correlations: a 2d numpy array of type numpy.uint8
 
-        :returns: A full, densely stored, N by N correlations matrix
-        :rtype: a 2d numpy array of type numpy.uint8
+    :returns: A full, densely stored, N by N correlations matrix
+    :rtype: a 2d numpy array of type numpy.uint8
     """
     n = correlations.shape[1]
     matrix = np.zeros((n,n), dtype=np.uint8)
@@ -210,21 +212,21 @@ def get_full_matrix(correlations):
 def generate_input_data(N, factor=2000.0):
     """ generate input data
 
-        This function generates hits stored as x,y,z-coordinates
-        and ct values from random noise. The default factor should
-        result in a density of about 0.002 when using a sliding
-        window width of 1500, where density is defined
-        as the total number of correlated hits / (N*sliding_window_width).
+    This function generates hits stored as x,y,z-coordinates
+    and ct values from random noise. The default factor should
+    result in a density of about 0.002 when using a sliding
+    window width of 1500, where density is defined
+    as the total number of correlated hits / (N*sliding_window_width).
 
-        :param N: The number of hits to generate
-        :type N: int
+    :param N: The number of hits to generate
+    :type N: int
 
-        :param factor: Optionally specify a factor to modify the correlation
+    :param factor: Optionally specify a factor to modify the correlation
             density of the hits. Default=2000.0
-        :type factor: float
+    :type factor: float
 
-        :returns: N hits stored as x,y,z,ct
-        :rtype: tuple(numpy ndarray of type numpy.float32)
+    :returns: N hits stored as x,y,z,ct
+    :rtype: tuple(numpy ndarray of type numpy.float32)
 
     """
     x = np.random.normal(0.2, 0.1, N).astype(np.float32)
@@ -237,25 +239,25 @@ def generate_input_data(N, factor=2000.0):
 def get_real_input_data(filename):
     """ Read input data from disk
 
-        Read a timeslice of input data from a file stored on disk.
-        The file format to be used is a text file that stores one
-        hit per row in a text file. The first column stores the
-        time the hit occured in nanoseconds. Followed by three
-        columns that store the x,y,z coordinates of where the
-        hit was measured in meters. The hits are assumed to be
-        stored in ascending order by the time the hit occured, so
-        earliest hit first.
+    Read a timeslice of input data from a file stored on disk.
+    The file format to be used is a text file that stores one
+    hit per row in a text file. The first column stores the
+    time the hit occured in nanoseconds. Followed by three
+    columns that store the x,y,z coordinates of where the
+    hit was measured in meters. The hits are assumed to be
+    stored in ascending order by the time the hit occured, so
+    earliest hit first.
 
-        This routine also multiplies the time values with the speed of light.
-        These values are therefore called ct and are stored in meters.
+    This routine also multiplies the time values with the speed of light.
+    These values are therefore called ct and are stored in meters.
 
-        :param filename: The path and the filename of the file that contains the input data.
-        :type filename: string
+    :param filename: The path and the filename of the file that contains the input data.
+    :type filename: string
 
-        :returns: N,x,y,z,ct. N is the number of hits that were retrieved from the file.
+    :returns: N,x,y,z,ct. N is the number of hits that were retrieved from the file.
             x,y,z are the coordinates of the hit in meters and ct the time multiplied
             by the speed of light, also in meters.
-        :rtype: tuple(int, numpy ndarray of type numpy.float32)
+    :rtype: tuple(int, numpy ndarray of type numpy.float32)
     """
     data = pandas.read_csv(filename, sep=' ', header=None)
 
@@ -268,12 +270,6 @@ def get_real_input_data(filename):
     y = np.array(data[2]).astype(np.float32)
     z = np.array(data[3]).astype(np.float32)
 
-    #print("x", x[:10], x.min(), x.max())
-    #print("y", y[:10], y.min(), y.max())
-    #print("z", z[:10], z.min(), z.max())
-    #print("ct", ct[:10], ct.min(), ct.max())
-    #print("ct diff", np.diff(ct[:11]))
-
     N = np.int32(x.size)
     return N,x,y,z,ct
 
@@ -281,38 +277,38 @@ def get_real_input_data(filename):
 def correlations_cpu_3B(correlations, x, y, z, ct, roadwidth=90.0, tmax=0.0):
     """ function for computing the reference answer using only the 3B condition
 
-        This function computes the Match 3B criterion instead of the quadratic
-        difference criterion. The 3B criterion is similar to the quadratic difference
-        criterion, but is also considers a maximum distance for two hits to be
-        correlated. This distance is based on the parameter 'roadwidth', which
-        is the assumed maximum distance a photon can travel through seawater.
+    This function computes the Match 3B criterion instead of the quadratic
+    difference criterion. The 3B criterion is similar to the quadratic difference
+    criterion, but is also considers a maximum distance for two hits to be
+    correlated. This distance is based on the parameter 'roadwidth', which
+    is the assumed maximum distance a photon can travel through seawater.
 
-        :param correlations: A correlations table of size N by sliding_window_width
-            used for storing the result, which is also returned.
-        :type correlations: a 2d numpy array of type numpy.uint8
+    :param correlations: A correlations table of size N by sliding_window_width
+        used for storing the result, which is also returned.
+    :type correlations: a 2d numpy array of type numpy.uint8
 
-        :param x: The x-coordinates of the hits
-        :type x: numpy ndarray of type numpy.float32
+    :param x: The x-coordinates of the hits
+    :type x: numpy ndarray of type numpy.float32
 
-        :param y: The y-coordinates of the hits
-        :type y: numpy ndarray of type numpy.float32
+    :param y: The y-coordinates of the hits
+    :type y: numpy ndarray of type numpy.float32
 
-        :param z: The z-coordinates of the hits
-        :type z: numpy ndarray of type numpy.float32
+    :param z: The z-coordinates of the hits
+    :type z: numpy ndarray of type numpy.float32
 
-        :param ct: The ct values of the hits
-        :type ct: numpy ndarray of type numpy.float32
+    :param ct: The ct values of the hits
+    :type ct: numpy ndarray of type numpy.float32
 
-        :param roadwidth: The roadwidth used in the 3B criterion, the assumed
-            distance a photon can travel through seawater. Default is 90.0.
-        :type roadwidth: float
+    :param roadwidth: The roadwidth used in the 3B criterion, the assumed
+        distance a photon can travel through seawater. Default is 90.0.
+    :type roadwidth: float
 
-        :param tmax: The maximum time between two hits for them to always be
-            considered correlated. By default 0.0.
-        :type tmax: float
+    :param tmax: The maximum time between two hits for them to always be
+        considered correlated. By default 0.0.
+    :type tmax: float
 
-        :returns: correlations table of size N by sliding_window_width.
-        :rtype: numpy 2d array of type numpy.uint8
+    :returns: correlations table of size N by sliding_window_width.
+    :rtype: numpy 2d array of type numpy.uint8
     """
     index_of_refrac = 1.3800851282 #also known as theta, angle of emitted Cherenkov light
     tan_theta_c     = np.sqrt((index_of_refrac-1.0) * (index_of_refrac+1.0) )
@@ -377,29 +373,29 @@ def correlations_cpu_3B(correlations, x, y, z, ct, roadwidth=90.0, tmax=0.0):
 def correlations_cpu(correlations, x, y, z, ct):
     """ function for computing the reference answer
 
-        This function is the CPU version of the quadratic difference algorithm.
-        It computes the correlations based on the quadratic difference criterion.
-        This function is mainly for testing and verification, for large datasets
-        use the GPU kernel.
+    This function is the CPU version of the quadratic difference algorithm.
+    It computes the correlations based on the quadratic difference criterion.
+    This function is mainly for testing and verification, for large datasets
+    use the GPU kernel.
 
-        :param correlations: A correlations table of size N by sliding_window_width
-            used for storing the result, which is also returned.
-        :type correlations: a 2d numpy array of type numpy.uint8
+    :param correlations: A correlations table of size N by sliding_window_width
+        used for storing the result, which is also returned.
+    :type correlations: a 2d numpy array of type numpy.uint8
 
-        :param x: The x-coordinates of the hits
-        :type x: numpy ndarray of type numpy.float32
+    :param x: The x-coordinates of the hits
+    :type x: numpy ndarray of type numpy.float32
 
-        :param y: The y-coordinates of the hits
-        :type y: numpy ndarray of type numpy.float32
+    :param y: The y-coordinates of the hits
+    :type y: numpy ndarray of type numpy.float32
 
-        :param z: The z-coordinates of the hits
-        :type z: numpy ndarray of type numpy.float32
+    :param z: The z-coordinates of the hits
+    :type z: numpy ndarray of type numpy.float32
 
-        :param ct: The ct values of the hits
-        :type ct: numpy ndarray of type numpy.float32
+    :param ct: The ct values of the hits
+    :type ct: numpy ndarray of type numpy.float32
 
-        :returns: correlations table of size N by sliding_window_width.
-        :rtype: numpy 2d array of type numpy.uint8
+    :returns: correlations table of size N by sliding_window_width.
+    :rtype: numpy 2d array of type numpy.uint8
     """
     for i in range(correlations.shape[1]):
         for j in range(i + 1, i + correlations.shape[0] + 1):
@@ -408,3 +404,35 @@ def correlations_cpu(correlations, x, y, z, ct):
                    correlations[j - i - 1, i] = 1
     return correlations
 
+def insert_clique(dense_matrix, sliding_window_width=1500, clique_size=10):
+    """ generate clique indices and insert into dense matrix
+
+    Insert a clique into a dense matrix for testing purposes. This function attemps to
+    generate a clique of size clique_size, but may generate a clique that is slightly
+    smaller.
+
+    :param dense_matrix: A densly stored correlation matrix, size N by N.
+    :type dense_matrix: 2d numpy array
+
+    :param sliding_window_width: the sliding window width, 1500 by default.
+    :type sliding_window_width: int
+
+    :param clique_size: The size of the clique that is to be insered into the data, 10 by default.
+    :type clique_size: int
+
+    :returns: The dense matrix, a list of clique indices, and the size of the inserted clique.
+    :rtype: tuple(numpy.ndarray, list, int)
+    """
+    #generate clique indices at most sliding_window_width apart
+    clique_indices = sorted((np.random.rand(clique_size) * float(sliding_window_width)).astype(np.int))
+    #shift it to somewhere in the middle
+    clique_indices += sliding_window_width
+    clique_indices = np.unique(clique_indices)
+    #may contain the same index multiple times, reduce clique_size if needed
+    clique_size = len(clique_indices)
+    for i in clique_indices:
+        for j in clique_indices:
+            if not i == j:
+                dense_matrix[i,j] = 1
+                dense_matrix[j,i] = 1
+    return (dense_matrix, clique_indices, clique_size)

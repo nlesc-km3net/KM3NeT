@@ -2,30 +2,14 @@ from __future__ import print_function
 
 from scipy.sparse import csr_matrix
 import numpy as np
-
-from .context import skip_if_no_cuda_device, get_kernel_path, get_full_matrix, generate_correlations_table
-
 import pycuda.driver as drv
 from pycuda.compiler import SourceModule
 
+from .context import skip_if_no_cuda_device
+from km3net.util import get_kernel_path, get_full_matrix, generate_correlations_table, insert_clique
+
 def test_sparse_purging_kernel():
-
     skip_if_no_cuda_device()
-
-    def insert_clique(dense_matrix, sliding_window_width, clique_size):
-        #generate clique indices at most sliding_window_width apart
-        clique_indices = sorted((np.random.rand(clique_size) * float(sliding_window_width)).astype(np.int))
-        #shift it to somewhere in the middle
-        clique_indices += sliding_window_width
-        clique_indices = np.unique(clique_indices)
-        #may contain the same index multiple times, reduce clique_size if needed
-        clique_size = len(clique_indices)
-        for i in clique_indices:
-            for j in clique_indices:
-                if not i == j:
-                    dense_matrix[i,j] = 1
-                    dense_matrix[j,i] = 1
-        return (dense_matrix, clique_indices, clique_size)
 
     prefix = "#define block_size_x 128 \n"
     with open(get_kernel_path()+'remove_nodes.cu', 'r') as f:

@@ -1,13 +1,12 @@
 from __future__ import print_function
 
 import numpy as np
-
-from .context import skip_if_no_cuda_device, get_kernel_path, create_plot, correlations_cpu, generate_input_data
-
 from kernel_tuner import run_kernel
 
-def test_quadratic_difference_kernel():
+from .context import skip_if_no_cuda_device, create_plot
+from km3net.util import get_kernel_path, correlations_cpu, generate_input_data
 
+def test_quadratic_difference_kernel():
     skip_if_no_cuda_device()
 
     with open(get_kernel_path()+'quadratic_difference_linear.cu', 'r') as f:

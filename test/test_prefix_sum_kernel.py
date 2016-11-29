@@ -1,13 +1,12 @@
 from __future__ import print_function
 
 import numpy as np
-
-from .context import skip_if_no_cuda_device, get_kernel_path
-
 from kernel_tuner import run_kernel
 
-def test_prefix_sum_kernel():
+from .context import skip_if_no_cuda_device
+from km3net.util import get_kernel_path
 
+def test_prefix_sum_kernel():
     skip_if_no_cuda_device()
 
     with open(get_kernel_path()+'prefixsum.cu', 'r') as f:
@@ -67,10 +66,7 @@ def test_prefix_sum_kernel():
 
     assert test_result
 
-
-
 def test_prefix_sum_single_block():
-
     skip_if_no_cuda_device()
 
     with open(get_kernel_path()+'prefixsum.cu', 'r') as f:
@@ -106,11 +102,8 @@ def test_prefix_sum_single_block():
 
     assert test_result
 
-
-
-
-
 def test_propagate_block_carry():
+    skip_if_no_cuda_device()
 
     with open(get_kernel_path()+'prefixsum.cu', 'r') as f:
         kernel_string = f.read()

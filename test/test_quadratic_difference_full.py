@@ -3,10 +3,10 @@ from __future__ import print_function
 from scipy.sparse import csr_matrix
 import numpy as np
 from nose.tools import nottest
-
-from .context import skip_if_no_cuda_device, get_kernel_path, create_plot, get_full_matrix, correlations_cpu, generate_input_data
-
 from kernel_tuner import run_kernel
+
+from .context import skip_if_no_cuda_device, create_plot
+from km3net.util import get_kernel_path, get_full_matrix, correlations_cpu, generate_input_data
 
 def test_quadratic_difference_full_sums_impl1():
     test_quadratic_difference_full_sums("quadratic_difference_full")
@@ -17,7 +17,6 @@ def test_quadratic_difference_full_sums_impl2():
 
 @nottest
 def test_quadratic_difference_full_sums(kernel_name):
-
     skip_if_no_cuda_device()
 
     with open(get_kernel_path()+'quadratic_difference_full.cu', 'r') as f:
@@ -71,14 +70,13 @@ def test_quadratic_difference_full_sparse_matrix_impl2():
 
 @nottest
 def test_quadratic_difference_full_sparse_matrix(kernel_name):
-
     skip_if_no_cuda_device()
 
     with open(get_kernel_path()+'quadratic_difference_full.cu', 'r') as f:
         kernel_string = f.read()
 
     N = np.int32(101)
-    sliding_window_width = np.int32(13)
+    sliding_window_width = np.int32(37)
     problem_size = (N, 1)
 
     x,y,z,ct = generate_input_data(N)
@@ -130,18 +128,10 @@ def test_quadratic_difference_full_sparse_matrix(kernel_name):
     print("diff2")
     print(list(zip(diff2.nonzero()[0], diff2.nonzero()[1])))
 
-
     print("diff.nnz", diff.nnz)
 
     if False:
-        from matplotlib import pyplot
-        f, (ax1, ax2) = pyplot.subplots(nrows=1, ncols=2, sharex=True, sharey=True)
-        f.tight_layout()
-        ax1.set_adjustable('box-forced')
-        ax2.set_adjustable('box-forced')
-        ax1.imshow(get_full_matrix(reference))
-        ax2.imshow(get_full_matrix(answer))
-        pyplot.show()
+        create_plot(get_full_matrix(reference), get_full_matrix(answer))
 
     assert diff.nnz == 0
     assert diff2.nnz == 0

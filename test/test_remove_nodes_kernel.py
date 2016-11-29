@@ -2,14 +2,12 @@ from __future__ import print_function
 
 from scipy.sparse import csr_matrix
 import numpy as np
-
-from .context import skip_if_no_cuda_device, get_kernel_path, get_full_matrix, generate_correlations_table
-
 from kernel_tuner import run_kernel
 
+from .context import skip_if_no_cuda_device
+from km3net.util import get_kernel_path, get_full_matrix, generate_correlations_table
 
 def test_remove_nodes_kernel():
-
     skip_if_no_cuda_device()
 
     with open(get_kernel_path()+'remove_nodes.cu', 'r') as f:

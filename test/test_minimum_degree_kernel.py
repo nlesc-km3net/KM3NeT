@@ -2,13 +2,12 @@ from __future__ import print_function
 
 from scipy.sparse import csr_matrix
 import numpy as np
-
-from .context import skip_if_no_cuda_device, get_kernel_path, get_full_matrix, generate_correlations_table
-
 from kernel_tuner import run_kernel
 
-def test_minimum_degree_kernel():
+from .context import skip_if_no_cuda_device
+from km3net.util import get_kernel_path, get_full_matrix, generate_correlations_table
 
+def test_minimum_degree_kernel():
     skip_if_no_cuda_device()
 
     with open(get_kernel_path()+'minimum_degree.cu', 'r') as f:
@@ -72,6 +71,7 @@ def test_minimum_degree_kernel():
 
 
 def test_combine_blocked_min_num():
+    skip_if_no_cuda_device()
 
     with open(get_kernel_path()+'minimum_degree.cu', 'r') as f:
         kernel_string = f.read()

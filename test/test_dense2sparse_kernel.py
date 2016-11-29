@@ -2,13 +2,12 @@ from __future__ import print_function
 
 from scipy.sparse import csr_matrix
 import numpy as np
-
-from .context import skip_if_no_cuda_device, get_kernel_path, create_plot, get_full_matrix, generate_correlations_table
-
 from kernel_tuner import run_kernel
 
-def test_dense2sparse_kernel():
+from .context import skip_if_no_cuda_device, create_plot
+from km3net.util import get_kernel_path, get_full_matrix, generate_correlations_table
 
+def test_dense2sparse_kernel():
     skip_if_no_cuda_device()
 
     with open(get_kernel_path()+'dense2sparse.cu', 'r') as f:

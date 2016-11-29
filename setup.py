@@ -1,6 +1,9 @@
 import os
 from setuptools import setup
 
+with open('requirements.txt') as f:
+    required = f.read().splitlines()
+
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
@@ -29,4 +32,5 @@ setup(
         'Topic :: Scientific/Engineering',
         'Development Status :: 2 - Pre-Alpha',
     ],
+    install_requires=required,
 )

@@ -6,7 +6,7 @@ from nose.tools import nottest
 from kernel_tuner import run_kernel
 
 from .context import skip_if_no_cuda_device, create_plot
-from km3net.util import get_kernel_path, get_full_matrix, correlations_cpu, generate_input_data
+from km3net.util import get_kernel_path, get_full_matrix, correlations_cpu, generate_input_data, sparse_to_dense
 
 def test_quadratic_difference_full_sums_impl1():
     test_quadratic_difference_full_sums("quadratic_difference_full")
@@ -75,8 +75,8 @@ def test_quadratic_difference_full_sparse_matrix(kernel_name):
     with open(get_kernel_path()+'quadratic_difference_full.cu', 'r') as f:
         kernel_string = f.read()
 
-    N = np.int32(101)
-    sliding_window_width = np.int32(37)
+    N = np.int32(600)
+    sliding_window_width = np.int32(300)
     problem_size = (N, 1)
 
     x,y,z,ct = generate_input_data(N)
@@ -96,7 +96,7 @@ def test_quadratic_difference_full_sparse_matrix(kernel_name):
     args = [row_idx, col_idx, prefix_sums, sums, N, sliding_window_width, x, y, z, ct]
 
     #call the CUDA kernel
-    params = { "block_size_x": 128, "write_spm": 1, 'write_rows': 1, 'window_width': sliding_window_width, 'tile_size_x': 1, 'use_shared': 1 }
+    params = { "block_size_x": 128, "write_spm": 1, 'write_rows': 1, 'window_width': sliding_window_width, 'tile_size_x': 1 }
     answer = run_kernel(kernel_name, kernel_string, problem_size, args, params)
 
     reference = csr_matrix(corr_matrix)
@@ -122,13 +122,13 @@ def test_quadratic_difference_full_sparse_matrix(kernel_name):
 
     print("diff")
     print(list(zip(diff.nonzero()[0], diff.nonzero()[1])))
+    print("diff.nnz", diff.nnz)
 
-    diff2 = answer - reference
-
+    answer2 = csr_matrix(sparse_to_dense(prefix_sums, col_idx), shape=(N,N))
+    diff2 = reference - answer2
     print("diff2")
     print(list(zip(diff2.nonzero()[0], diff2.nonzero()[1])))
-
-    print("diff.nnz", diff.nnz)
+    print("diff2.nnz", diff2.nnz)
 
     if False:
         create_plot(get_full_matrix(reference), get_full_matrix(answer))

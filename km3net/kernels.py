@@ -34,41 +34,45 @@ class QuadraticDifferenceSparse(object):
 
         """
 
-        self.N = N
-        self.sliding_window_width = sliding_window_width
+        self.N = np.int32(N)
+        self.sliding_window_width = np.int32(sliding_window_width)
 
         with open(get_kernel_path()+'quadratic_difference_full.cu', 'r') as f:
             kernel_string = f.read()
-        block_size_x = 256
-        prefix = "#define block_size_x " + str(block_size_x) + "\n"
+        block_size_x = 128
+        prefix = "#define block_size_x " + str(block_size_x) + "\n" + "#define window_width " + str(sliding_window_width) + "\n"
         kernel_string = prefix + kernel_string
 
         self.quadratic_difference_sums = SourceModule("#define write_sums 1\n" + kernel_string, options=['-Xcompiler=-Wall'],
                     arch='compute_' + cc, code='sm_' + cc,
-                    cache_dir=False).get_function("quadratic_difference_full_shfl")
+                    cache_dir=False).get_function("quadratic_difference_full")
         self.quadratic_difference_sparse_matrix = SourceModule("#define write_spm 1\n" + kernel_string, options=['-Xcompiler=-Wall'],
                     arch='compute_' + cc, code='sm_' + cc,
-                    cache_dir=False).get_function("quadratic_difference_full_shfl")
+                    cache_dir=False).get_function("quadratic_difference_full")
 
         self.threads = (block_size_x, 1, 1)
         self.grid = (int(np.ceil(N/float(block_size_x))), 1)
 
-    def compute(self, d_x, d_y, d_z, d_ct):
+    def compute(self, x, y, z, ct):
         """ perform a computation of the quadratic difference algorithm
 
 
-        :param d_x: an array storing the x-coordinates of the hits
-        :type d_x: numpy ndarray of type numpy.float32
+        :param d_x: an array storing the x-coordinates of the hits,
+            either a numpy ndarray or an array stored on the GPU
+        :type d_x: numpy ndarray or pycuda.driver.DeviceAllocation
 
-        :param d_y: an array storing the y-coordinates of the hits
-        :type d_y: numpy ndarray of type numpy.float32
+        :param d_y: an array storing the y-coordinates of the hits,
+            either a numpy ndarray or an array stored on the GPU
+        :type d_x: numpy ndarray or pycuda.driver.DeviceAllocation
 
-        :param d_z: an array storing the z-coordinates of the hits
-        :type d_z: numpy ndarray of type numpy.float32
+        :param d_z: an array storing the z-coordinates of the hits,
+            either a numpy ndarray or an array stored on the GPU
+        :type d_x: numpy ndarray or pycuda.driver.DeviceAllocation
 
-        :param d_ct: an array storing the 'ct' value of the hits.
+        :param d_ct: an array storing the 'ct' value of the hits,
+            either a numpy ndarray or an array stored on the GPU
             This is the time in nano seconds multiplied with the speed of light.
-        :type d_ct: numpy ndarray of type numpy.float32
+        :type d_x: numpy ndarray or pycuda.driver.DeviceAllocation
 
 
         :returns: d_col_idx, d_prefix_sums, d_degrees
@@ -80,6 +84,18 @@ class QuadraticDifferenceSparse(object):
         :rtype: tuple( pycuda.driver.DeviceAllocation )
 
         """
+        def ready_input(arg):
+            if isinstance(arg, np.ndarray):
+                return allocate_and_copy(arg)
+            elif isinstance(drv.DeviceAllocation):
+                return arg
+            else:
+                raise TypeError("Argument is not numpy ndarray or pycuda.driver.DeviceAllocation")
+
+        d_x = ready_input(x)
+        d_y = ready_input(y)
+        d_z = ready_input(z)
+        d_ct = ready_input(ct)
 
         #run the first kernel
         row_idx = np.zeros(10).astype(np.int32)
@@ -107,7 +123,7 @@ class QuadraticDifferenceSparse(object):
         args_list2 = [d_row_idx, d_col_idx, d_prefix_sums, d_degrees, self.N, self.sliding_window_width, d_x, d_y, d_z, d_ct]
         self.quadratic_difference_sparse_matrix(*args_list2, block=self.threads, grid=self.grid, stream=None, shared=0)
 
-        return d_col_idx, d_prefix_sums, d_degrees
+        return d_col_idx, d_prefix_sums, d_degrees, total_correlated_hits
 
 
 class PurgingSparse(object):

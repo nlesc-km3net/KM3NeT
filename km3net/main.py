@@ -24,7 +24,7 @@ def main():
 
     #get input data
     print("Reading input data")
-    N_all,x_all,y_all,z_all,ct_all = get_real_input_data('event0.txt')
+    N_all,x_all,y_all,z_all,ct_all = get_real_input_data('/var/scratch/bwn200/KM3Net/event1-crop.txt')
 
     shift = 0
     x,y,z,ct = get_slice(x_all, y_all, z_all, ct_all, N, shift)
@@ -52,7 +52,8 @@ def main():
         drv.memcpy_htod(d_x, ct)
 
         #call the quadratic difference kernel twice to build sparse matrix
-        d_col_idx, d_prefix_sums, d_degrees = qd_kernel.compute(d_x, d_y, d_z, d_ct)
+        #d_col_idx, d_prefix_sums, d_degrees = qd_kernel.compute(d_x, d_y, d_z, d_ct)
+        d_col_idx, d_prefix_sums, d_degrees = qd_kernel.compute(x, y, z, ct)
 
         #use purging algorithm to find clique
         clique = purging.compute(d_col_idx, d_prefix_sums, d_degrees, shift)

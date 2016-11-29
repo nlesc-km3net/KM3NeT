@@ -73,7 +73,6 @@ def allocate_and_copy(arg):
     drv.memcpy_htod(gpu_arg, arg)
     return gpu_arg
 
-
 def generate_correlations_table(N, sliding_window_width, cutoff=2.87):
     """ generate input data with an expected density of correlated hits
 
@@ -209,6 +208,41 @@ def get_full_matrix(correlations):
                     matrix[col,i] = 1
     return matrix
 
+
+def sparse_to_dense(prefix_sums, col_idx):
+    """ Convert a sparse matrix to a dense matrix
+
+    Helper function to convert a sparse matrix in CSR format to a
+    dense 2d matrix of size N by N.
+    This function should only be used for testing purposes on small
+    correlations tables as the full correlations matrix is typically
+    huge and nearly empty.
+
+    :param prefix_sums: This is the row_start array of the CSR format.
+        It contains the start index of each row within the col_idx array. Note that
+        row 0 starts on position 0 implicitly, so the the first number in the
+        prefix_sums array is actually the start index of row 1, which is also
+        the number of elements on row 0. The size of this array is equal to
+        the number of rows.
+    :type prefix_sums: numpy ndarray
+
+    :param col_idx: This array stores the column indices of the CSR format.
+        The size of this array is equal to the number of elements in the matrix.
+    :type col_idx: numpy ndarray
+
+    :returns: A full densely stored correlation matrix of size N by N.
+    :rtype: numpy ndarray
+    """
+    N = np.int32(prefix_sums.size)
+    matrix = np.zeros((N,N), dtype=np.uint8)
+    start = 0
+    for row in range(N):
+        end = prefix_sums[row]
+        for i in range(start,end):
+            matrix[row,col_idx[i]] = 1
+        start = end
+    return matrix
+
 def generate_input_data(N, factor=2000.0):
     """ generate input data
 
@@ -232,7 +266,7 @@ def generate_input_data(N, factor=2000.0):
     x = np.random.normal(0.2, 0.1, N).astype(np.float32)
     y = np.random.normal(0.2, 0.1, N).astype(np.float32)
     z = np.random.normal(0.2, 0.1, N).astype(np.float32)
-    ct = factor*np.random.normal(0.5, 0.06, N).astype(np.float32)  #replace 2000 with 5 for the new density
+    ct = (factor*np.random.normal(0.5, 0.06, N)).astype(np.float32)  #replace 2000 with 5 for the new density
     return x,y,z,ct
 
 
@@ -378,7 +412,7 @@ def correlations_cpu(correlations, x, y, z, ct):
     This function is mainly for testing and verification, for large datasets
     use the GPU kernel.
 
-    :param correlations: A correlations table of size N by sliding_window_width
+    :param correlations: A correlations table of size sliding_window_width by N
         used for storing the result, which is also returned.
     :type correlations: a 2d numpy array of type numpy.uint8
 
@@ -394,8 +428,8 @@ def correlations_cpu(correlations, x, y, z, ct):
     :param ct: The ct values of the hits
     :type ct: numpy ndarray of type numpy.float32
 
-    :returns: correlations table of size N by sliding_window_width.
-    :rtype: numpy 2d array of type numpy.uint8
+    :returns: correlations table of size sliding_window_width by N.
+    :rtype: numpy 2d array
     """
     for i in range(correlations.shape[1]):
         for j in range(i + 1, i + correlations.shape[0] + 1):

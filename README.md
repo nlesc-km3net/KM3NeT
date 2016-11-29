@@ -18,11 +18,11 @@ Documentation can be found [here](https://benvanwerkhoven.github.io/KM3Net/sphin
 
 Installation
 ------------
-Clone the repository
+Clone the repository  
     ``git clone git@github.com:benvanwerkhoven/KM3Net.git``  
 Change into the top-level directory  
     ``cd KM3Net``  
-Install dependencies
+Install dependencies  
     ``pip install -r requirements.txt``  
     ``pip install .``
 

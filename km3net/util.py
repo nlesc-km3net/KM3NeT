@@ -208,8 +208,27 @@ def get_full_matrix(correlations):
                     matrix[col,i] = 1
     return matrix
 
+def memcpy_dtoh(d_x, N, dtype):
+    """ helper func to copy data from the GPU
 
-def sparse_to_dense(prefix_sums, col_idx):
+    :param d_x: Array on the GPU
+    :type d_x: pycuda.driver.DeviceAllocation
+
+    :param N: Number of elements in GPU array
+    :type N: int
+
+    :param dtype: Type of the array
+    :type dtype: numpy.dtype
+
+    :returns: A numpy array copy of the GPU array of size N, and data type dtype.
+    :rtype: numpy.ndarray
+
+    """
+    temp = np.zeros(N, dtype=dtype)
+    drv.memcpy_dtoh(temp, d_x)
+    return temp
+
+def sparse_to_dense(prefix_sums, col_idx, N=None, hits=None):
     """ Convert a sparse matrix to a dense matrix
 
     Helper function to convert a sparse matrix in CSR format to a
@@ -224,15 +243,28 @@ def sparse_to_dense(prefix_sums, col_idx):
         prefix_sums array is actually the start index of row 1, which is also
         the number of elements on row 0. The size of this array is equal to
         the number of rows.
-    :type prefix_sums: numpy ndarray
+    :type prefix_sums: numpy ndarray or pycuda.driver.DeviceAllocation
 
     :param col_idx: This array stores the column indices of the CSR format.
         The size of this array is equal to the number of elements in the matrix.
-    :type col_idx: numpy ndarray
+    :type col_idx: numpy ndarray or pycuda.driver.DeviceAllocation
+
+    :param N: The number of hits, only needs to be passed when prefix_sums is
+        passed as a pycuda.driver.DeviceAllocation instead of a numpy array
+    :type N: int
+
+    :param hits: The number of correlated hits, only needs to be passed when col_idx is
+        passed as a pycuda.driver.DeviceAllocation instead of a numpy array
+    :type hits: int
 
     :returns: A full densely stored correlation matrix of size N by N.
     :rtype: numpy ndarray
     """
+    if isinstance(prefix_sums, drv.DeviceAllocation):
+        prefix_sums = memcpy_dtoh(prefix_sums, N, np.int32)
+    if isinstance(col_idx, drv.DeviceAllocation):
+        col_idx = memcpy_dtoh(col_idx, hits, np.int32)
+
     N = np.int32(prefix_sums.size)
     matrix = np.zeros((N,N), dtype=np.uint8)
     start = 0

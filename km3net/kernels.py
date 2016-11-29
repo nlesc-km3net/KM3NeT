@@ -233,16 +233,16 @@ class PurgingSparse(object):
             #print("current_minimum", current_minimum)
             #print("current_num_nodes", current_num_nodes)
 
-        print("finished purging, iterations = ", counter)
+        #print("finished purging, iterations = ", counter)
 
         degrees = np.zeros(self.N).astype(np.int32)
         drv.memcpy_dtoh(degrees, d_degrees)
         if (current_num_nodes > 0):
-            print("found clique of size=", current_num_nodes)
+            #print("found clique of size=", current_num_nodes)
             indices = np.array(range(degrees.size))
             found_indices = indices[degrees >= current_minimum]
-            print(found_indices + shift)
-            return found_indices
+            #print(found_indices + shift)
+            return found_indices + shift
 
         return []
 

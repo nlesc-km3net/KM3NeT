@@ -58,6 +58,8 @@ def main():
         #use purging algorithm to find clique
         clique = purging.compute(d_col_idx, d_prefix_sums, d_degrees, shift)
         if clique.size > 0:
+            print("found clique of size", len(clique))
+            print(clique)
             found_cliques += 1
             total_clique_size += clique.size
 

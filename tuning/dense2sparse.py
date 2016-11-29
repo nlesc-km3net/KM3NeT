@@ -3,10 +3,10 @@ from __future__ import print_function
 
 from collections import OrderedDict
 import numpy as np
-
-from context import get_kernel_path, get_full_matrix, generate_large_correlations_table
-
 from kernel_tuner import tune_kernel, run_kernel
+
+from context import get_kernel_path
+from km3net.util import get_full_matrix, generate_large_correlations_table
 
 def tune_dense2sparse():
 

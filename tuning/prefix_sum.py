@@ -3,10 +3,9 @@ from __future__ import print_function
 
 from collections import OrderedDict
 import numpy as np
+from kernel_tuner import tune_kernel
 
 from context import get_kernel_path
-
-from kernel_tuner import tune_kernel
 
 def tune_prefix_sum_kernel():
 

@@ -3,10 +3,10 @@ from __future__ import print_function
 
 from collections import OrderedDict
 import numpy as np
-
-from context import get_kernel_path, generate_input_data
-
 from kernel_tuner import tune_kernel
+
+from context import get_kernel_path
+from km3net.util import generate_input_data
 
 def tune_quadratic_difference_kernel():
 

@@ -114,9 +114,7 @@ __global__ void quadratic_difference_full(int *__restrict__ row_idx, int *__rest
         #endif
     }
 
-
     //first loop computes correlations with earlier hits
-
         //unfortunately there's no better way to do this right now
         //[1, 2, 3, 4, 5, 6, 10, 12, 15]
         #if f_unroll == 2
@@ -162,7 +160,6 @@ __global__ void quadratic_difference_full(int *__restrict__ row_idx, int *__rest
             }
 
         }
-
 
         //make sure all threads are done with phase-1
         __syncthreads();
@@ -245,10 +242,11 @@ __global__ void quadratic_difference_full(int *__restrict__ row_idx, int *__rest
 
         #if write_sums == 1
         for (int ti=0; ti<tile_size_x; ti++) {
-            sums[bx+i+ti*block_size_x] = sum[ti];
+            if (bx+i+ti*block_size_x < N) {
+                sums[bx+i+ti*block_size_x] = sum[ti];
+            }
         }
         #endif
-
 }
 
 

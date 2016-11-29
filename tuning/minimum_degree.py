@@ -4,10 +4,10 @@ from __future__ import print_function
 from scipy.sparse import csr_matrix
 from collections import OrderedDict
 import numpy as np
-
-from context import get_kernel_path, generate_large_correlations_table, create_sparse_matrix
-
 from kernel_tuner import tune_kernel
+
+from context import get_kernel_path
+from km3net.util import generate_large_correlations_table, create_sparse_matrix
 
 def tune_minimum_degree():
 

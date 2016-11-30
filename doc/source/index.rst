@@ -12,7 +12,8 @@ Contents:
    :maxdepth: 1
 
    Introduction <self>
-   internal
+   kernels
+   utils
 
 Introduction
 ============
@@ -23,14 +24,21 @@ analyzes the hits that come out of the detector. The algorithm looks
 for correlated hits and analyzes them to detect neutrinos passing
 through the detector.
 
+
 Installation
 ------------
-Installation is currently not required, if needed instructions will follow later.
+Clone the repository  
+    ``git clone git@github.com:benvanwerkhoven/KM3Net.git``  
+Change into the top-level directory  
+    ``cd KM3Net``  
+Install using  
+    ``pip install -r requirements.txt``  
+    ``pip install .``
 
 
 Dependencies
 ------------
- * Python 3 
+ * Python 3 (http://conda.pydata.org/miniconda.html)
  * PyCuda (https://mathema.tician.de/software/)
  * Pandas
  * Scipy
@@ -39,11 +47,11 @@ Dependencies
  * Sphinx readthedocs theme
  * Kernel Tuner (https://github.com/benvanwerkhoven/kernel_tuner)
 
-Dependencies can be installed with ``pip install -r requirements.txt``.
 
 Example usage
 -------------
-Example on how to use the software will go here.
+Example on how to use the software has been documented in a Jupyter Notebook,
+which can be viewed [here](https://github.com/benvanwerkhoven/KM3Net/blob/master/notebooks/Example.ipynb).
 
 
 Contributors

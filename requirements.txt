@@ -1,7 +1,8 @@
 scipy==0.18.1
 numpy
-pycuda
 sphinx
 sphinx_rtd_theme
 pandas
+pycuda
 kernel_tuner
+nose

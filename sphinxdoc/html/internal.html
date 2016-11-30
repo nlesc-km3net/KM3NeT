@@ -1,0 +1,693 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Internal module documentation &mdash; km3net 0.0.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="km3net 0.0.1 documentation" href="index.html"/>
+        <link rel="prev" title="The KM3Net documentation" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> km3net
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Introduction</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Internal module documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#km3net-kernels-quadraticdifferencesparse">km3net.kernels.QuadraticDifferenceSparse</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#km3net-kernels-purgingsparse">km3net.kernels.PurgingSparse</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-km3net.util">km3net.util</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">km3net</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Internal module documentation</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/internal.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="toctree-wrapper compound">
+</div>
+<div class="section" id="internal-module-documentation">
+<h1>Internal module documentation<a class="headerlink" href="#internal-module-documentation" title="Permalink to this headline">¶</a></h1>
+<p>This file provides detailed information about the objects and modules used by
+the KM3Net package internally. This information should only be
+relevant for developers of the KM3Net package.</p>
+<div class="section" id="km3net-kernels-quadraticdifferencesparse">
+<h2>km3net.kernels.QuadraticDifferenceSparse<a class="headerlink" href="#km3net-kernels-quadraticdifferencesparse" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="km3net.kernels.QuadraticDifferenceSparse">
+<em class="property">class </em><code class="descclassname">km3net.kernels.</code><code class="descname">QuadraticDifferenceSparse</code><span class="sig-paren">(</span><em>N</em>, <em>sliding_window_width=1500</em>, <em>cc='52'</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.kernels.QuadraticDifferenceSparse" title="Permalink to this definition">¶</a></dt>
+<dd><p>class that provides an interface to the Quadratic Difference GPU Kernel and maintains GPU state</p>
+<p>instantiate QuadraticDifferenceSparse</p>
+<p>Create the object that provides an interface to the GPU kernel for performing the
+Quadratic Difference algorithm. This implementation of the algorithm stores the
+correlation table in a sparse manner, using CSR notation.</p>
+<p>When this object is instantiated the CUDA kernel
+code is compiled and some of the GPU memory is allocated.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>N</strong> (<em>int</em>) &#8211; The largest number of hits that are to be processed by one iteration
+of the quadratic difference algorithm.</li>
+<li><strong>sliding_window_width</strong> (<em>int</em>) &#8211; The width of the &#8216;window&#8217; in which we look for correlated
+hits. This is related to the size of the detector and the expected rate of background
+induced hits. The value we currently assume is 1500.</li>
+<li><strong>cc</strong> (<em>string</em>) &#8211; The CUDA compute capability of the target device as a string, consisting
+of the major and minor number concatenated without any separators.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="km3net.kernels.QuadraticDifferenceSparse.compute">
+<code class="descname">compute</code><span class="sig-paren">(</span><em>d_x</em>, <em>d_y</em>, <em>d_z</em>, <em>d_ct</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.kernels.QuadraticDifferenceSparse.compute" title="Permalink to this definition">¶</a></dt>
+<dd><p>perform a computation of the quadratic difference algorithm</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>d_x</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; an array storing the x-coordinates of the hits</li>
+<li><strong>d_y</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; an array storing the y-coordinates of the hits</li>
+<li><strong>d_z</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; an array storing the z-coordinates of the hits</li>
+<li><strong>d_ct</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; an array storing the &#8216;ct&#8217; value of the hits.
+This is the time in nano seconds multiplied with the speed of light.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">d_col_idx, d_prefix_sums, d_degrees
+d_col_idx, d_prefix_sums: The sparse matrix in CSR notation. d_col_idx stores the column indices,
+the size equals the number of correlations (or edges in the graph).
+d_prefix_sums stores per row, the start index of the row within the column index array. The size of d_prefix_sums is equal to the number of hits.
+d_degrees: The number of correlated hits per hit, stored as an array of size equal to the number of hits.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">tuple( pycuda.driver.DeviceAllocation )</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="km3net-kernels-purgingsparse">
+<h2>km3net.kernels.PurgingSparse<a class="headerlink" href="#km3net-kernels-purgingsparse" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="km3net.kernels.PurgingSparse">
+<em class="property">class </em><code class="descclassname">km3net.kernels.</code><code class="descname">PurgingSparse</code><span class="sig-paren">(</span><em>N</em>, <em>cc</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.kernels.PurgingSparse" title="Permalink to this definition">¶</a></dt>
+<dd><p>class that provides an interface to the GPU Kernels used for Purging and maintains GPU state</p>
+<p>instantiate PurgingSparse</p>
+<p>Create the object that provides an interface to the GPU kernel for performing the
+Purging algorithm on a sparse correlation table. This implementation of the
+algorithm uses the correlation table in a sparse manner, produced by the
+Quadratic Difference Sparse kernel. When this object is instantiated the
+CUDA kernel codes are compiled.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>N</strong> (<em>int</em>) &#8211; The largest number of hits that are to be processed by one iteration
+of the quadratic difference algorithm.</li>
+<li><strong>cc</strong> (<em>string</em>) &#8211; The CUDA compute capability of the target device as a string, consisting
+of the major and minor number concatenated without any separators.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="km3net.kernels.PurgingSparse.compute">
+<code class="descname">compute</code><span class="sig-paren">(</span><em>d_col_idx</em>, <em>d_prefix_sums</em>, <em>d_degrees</em>, <em>shift=0</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.kernels.PurgingSparse.compute" title="Permalink to this definition">¶</a></dt>
+<dd><p>perform purging on a sparse matrix</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>d_col_idx</strong> (<em>pycuda.driver.DeviceAllocation</em>) &#8211; A device allocation storing the column indices of the sparse matrix.
+The size of d_col_idx equals the number of correlations.</li>
+<li><strong>d_prefix_sums</strong> (<em>pycuda.driver.DeviceAllocation</em>) &#8211; The start index of each row within the column index array.
+The size of d_prefix_sums is equal to the number of hits.</li>
+<li><strong>d_degrees</strong> (<em>pycuda.driver.DeviceAllocation</em>) &#8211; The number of correlated hits per hit, stored as an array of size equal to the number of hits.</li>
+<li><strong>shift</strong> (<em>int</em>) &#8211; Optional parameter that can be used to shift the indices of the nodes
+that remain after purging. This could be used when sliding through a larger time
+slice to convert the indices from within the current slice to a global index.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The list of node indices of the nodes that remain after purging.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list ( int )</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-km3net.util">
+<span id="km3net-util"></span><h2>km3net.util<a class="headerlink" href="#module-km3net.util" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="km3net.util.allocate_and_copy">
+<code class="descclassname">km3net.util.</code><code class="descname">allocate_and_copy</code><span class="sig-paren">(</span><em>arg</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.allocate_and_copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>helper func to allocate and copy GPU memory</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>arg</strong> (<em>numpy ndarray</em>) &#8211; A numpy array that should be moved to GPU memory. This function
+will allocate GPU memory equal to the size of this array and copy the
+entire array into the newly allocated GPU memory.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A PyCuda device allocation that represents the GPU memory allocation</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">pycuda.driver.DeviceAllocation</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="km3net.util.correlations_cpu">
+<code class="descclassname">km3net.util.</code><code class="descname">correlations_cpu</code><span class="sig-paren">(</span><em>correlations</em>, <em>x</em>, <em>y</em>, <em>z</em>, <em>ct</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.correlations_cpu" title="Permalink to this definition">¶</a></dt>
+<dd><p>function for computing the reference answer</p>
+<p>This function is the CPU version of the quadratic difference algorithm.
+It computes the correlations based on the quadratic difference criterion.
+This function is mainly for testing and verification, for large datasets
+use the GPU kernel.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>correlations</strong> (<em>a 2d numpy array of type numpy.uint8</em>) &#8211; A correlations table of size N by sliding_window_width
+used for storing the result, which is also returned.</li>
+<li><strong>x</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The x-coordinates of the hits</li>
+<li><strong>y</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The y-coordinates of the hits</li>
+<li><strong>z</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The z-coordinates of the hits</li>
+<li><strong>ct</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The ct values of the hits</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">correlations table of size N by sliding_window_width.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy 2d array of type numpy.uint8</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="km3net.util.correlations_cpu_3B">
+<code class="descclassname">km3net.util.</code><code class="descname">correlations_cpu_3B</code><span class="sig-paren">(</span><em>correlations</em>, <em>x</em>, <em>y</em>, <em>z</em>, <em>ct</em>, <em>roadwidth=90.0</em>, <em>tmax=0.0</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.correlations_cpu_3B" title="Permalink to this definition">¶</a></dt>
+<dd><p>function for computing the reference answer using only the 3B condition</p>
+<p>This function computes the Match 3B criterion instead of the quadratic
+difference criterion. The 3B criterion is similar to the quadratic difference
+criterion, but is also considers a maximum distance for two hits to be
+correlated. This distance is based on the parameter &#8216;roadwidth&#8217;, which
+is the assumed maximum distance a photon can travel through seawater.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>correlations</strong> (<em>a 2d numpy array of type numpy.uint8</em>) &#8211; A correlations table of size N by sliding_window_width
+used for storing the result, which is also returned.</li>
+<li><strong>x</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The x-coordinates of the hits</li>
+<li><strong>y</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The y-coordinates of the hits</li>
+<li><strong>z</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The z-coordinates of the hits</li>
+<li><strong>ct</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The ct values of the hits</li>
+<li><strong>roadwidth</strong> (<em>float</em>) &#8211; The roadwidth used in the 3B criterion, the assumed
+distance a photon can travel through seawater. Default is 90.0.</li>
+<li><strong>tmax</strong> (<em>float</em>) &#8211; The maximum time between two hits for them to always be
+considered correlated. By default 0.0.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">correlations table of size N by sliding_window_width.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy 2d array of type numpy.uint8</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="km3net.util.create_sparse_matrix">
+<code class="descclassname">km3net.util.</code><code class="descname">create_sparse_matrix</code><span class="sig-paren">(</span><em>correlations</em>, <em>sums</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.create_sparse_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>call GPU kernel to transform a correlations table into a spare matrix</p>
+<p>This function compiles the dense2sparse GPU kernel and calls it convert a
+densely stored correlations table into a sparsely stored correlation matrix.
+The sparse notation used is CSR.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>correlations</strong> (<em>a 2d numpy array of type numpy.uint8</em>) &#8211; A correlations table of size N by sliding_window_width</li>
+<li><strong>sums</strong> (<em>numpy array of type numpy.int32</em>) &#8211; An array with the number of correlated hits per hit</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>This function returns three arrays that together form the sparse matrix</p>
+<ul class="simple">
+<li>row_idx: the row index of each entry in the column index array</li>
+<li>col_idx: the column index of each correlation in the sparse matrix</li>
+<li>prefix_sums: the offset into the column index array for each row</li>
+</ul>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy ndarray of type numpy.int32</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="km3net.util.generate_correlations_table">
+<code class="descclassname">km3net.util.</code><code class="descname">generate_correlations_table</code><span class="sig-paren">(</span><em>N</em>, <em>sliding_window_width</em>, <em>cutoff=2.87</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.generate_correlations_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>generate input data with an expected density of correlated hits</p>
+<p>This function is for testing purposes. It generates a correlations
+table of size N by sliding_window_width, which is filled with zeros
+or ones when two hits are considered correlated.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>N</strong> (<em>int</em>) &#8211; The number of hits to be considerd by this correlation table</li>
+<li><strong>sliding_window_width</strong> (<em>int</em>) &#8211; The sliding window width used for this
+correlation table.</li>
+<li><strong>cutoff</strong> (<em>float</em>) &#8211; The cutoff used for considering two hits correlated. This
+is actually the sigma of gaussian distribution, only values that are
+above the cutoff are considered a hit. Default value is 2.87, which
+should fill a correlations table with a density of roughly 0.0015.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">correlations table of size N by sliding_window_width</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy ndarray of type numpy.uint8</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="km3net.util.generate_input_data">
+<code class="descclassname">km3net.util.</code><code class="descname">generate_input_data</code><span class="sig-paren">(</span><em>N</em>, <em>factor=2000.0</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.generate_input_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>generate input data</p>
+<p>This function generates hits stored as x,y,z-coordinates
+and ct values from random noise. The default factor should
+result in a density of about 0.002 when using a sliding
+window width of 1500, where density is defined
+as the total number of correlated hits / (N*sliding_window_width).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>N</strong> (<em>int</em>) &#8211; The number of hits to generate</li>
+<li><strong>factor</strong> (<em>float</em>) &#8211; Optionally specify a factor to modify the correlation
+density of the hits. Default=2000.0</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">N hits stored as x,y,z,ct</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">tuple(numpy ndarray of type numpy.float32)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="km3net.util.generate_large_correlations_table">
+<code class="descclassname">km3net.util.</code><code class="descname">generate_large_correlations_table</code><span class="sig-paren">(</span><em>N</em>, <em>sliding_window_width</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.generate_large_correlations_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>generate a larget set of input data with an expected density of correlated hits</p>
+<p>This function is for testing purposes. It generates a large correlations
+table of size N by sliding_window_width, which is filled with zeros
+or ones when two hits are considered correlated. This function has no cutoff
+parameter but uses generate_input_data() to get input data. The correlations
+table is reconstructed on the GPU, for which a kernel is compiled and ran
+on the fly.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>N</strong> (<em>int</em>) &#8211; The number of hits to be considerd by this correlation table</li>
+<li><strong>sliding_window_width</strong> (<em>int</em>) &#8211; The sliding window width used for this
+correlation table.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">correlations table of size N by sliding_window_width and an array
+storing the number of correlated hits per hit of size N.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy ndarray of type numpy.uint8, a numpy array of type numpy.int32</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="km3net.util.get_full_matrix">
+<code class="descclassname">km3net.util.</code><code class="descname">get_full_matrix</code><span class="sig-paren">(</span><em>correlations</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.get_full_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>obtain a full correlation matrix from the correlations table</p>
+<p>This function should only be used for testing purposes on small
+correlations tables as the full correlations matrix is typically
+huge and nearly empty.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>correlations</strong> (<em>a 2d numpy array of type numpy.uint8</em>) &#8211; A correlations table of size N by sliding_window_width</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A full, densely stored, N by N correlations matrix</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">a 2d numpy array of type numpy.uint8</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="km3net.util.get_kernel_path">
+<code class="descclassname">km3net.util.</code><code class="descname">get_kernel_path</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.get_kernel_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>function that returns the location of the CUDA kernels on disk</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the location of the CUDA kernels</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="km3net.util.get_real_input_data">
+<code class="descclassname">km3net.util.</code><code class="descname">get_real_input_data</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.get_real_input_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read input data from disk</p>
+<p>Read a timeslice of input data from a file stored on disk.
+The file format to be used is a text file that stores one
+hit per row in a text file. The first column stores the
+time the hit occured in nanoseconds. Followed by three
+columns that store the x,y,z coordinates of where the
+hit was measured in meters. The hits are assumed to be
+stored in ascending order by the time the hit occured, so
+earliest hit first.</p>
+<p>This routine also multiplies the time values with the speed of light.
+These values are therefore called ct and are stored in meters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>string</em>) &#8211; The path and the filename of the file that contains the input data.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">N,x,y,z,ct. N is the number of hits that were retrieved from the file.
+x,y,z are the coordinates of the hit in meters and ct the time multiplied
+by the speed of light, also in meters.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">tuple(int, numpy ndarray of type numpy.float32)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="km3net.util.get_slice">
+<code class="descclassname">km3net.util.</code><code class="descname">get_slice</code><span class="sig-paren">(</span><em>x_all</em>, <em>y_all</em>, <em>z_all</em>, <em>ct_all</em>, <em>N</em>, <em>shift</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.get_slice" title="Permalink to this definition">¶</a></dt>
+<dd><p>return a smaller slice of the whole timeslice</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x_all</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The x-coordinates of the hits for the whole timeslice</li>
+<li><strong>y_all</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The y-coordinates of the hits for the whole timeslice</li>
+<li><strong>z_all</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The z-coordinates of the hits for the whole timeslice</li>
+<li><strong>ct_all</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The ct values of the hits for the whole timeslice</li>
+<li><strong>N</strong> (<em>int</em>) &#8211; The number of hits that this smaller slice should contain</li>
+<li><strong>shift</strong> (<em>int</em>) &#8211; The offset into the whole timeslice where this slice should start</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">x,y,z,ct for the smaller slice</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">tuple(numpy ndarray of type numpy.float32)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="km3net.util.init_pycuda">
+<code class="descclassname">km3net.util.</code><code class="descname">init_pycuda</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.init_pycuda" title="Permalink to this definition">¶</a></dt>
+<dd><p>helper func to init PyCuda</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The PyCuda context and a string containing the major and minor compute capability for the device</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">pycuda.driver.Context, string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="km3net.util.insert_clique">
+<code class="descclassname">km3net.util.</code><code class="descname">insert_clique</code><span class="sig-paren">(</span><em>dense_matrix</em>, <em>sliding_window_width=1500</em>, <em>clique_size=10</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.insert_clique" title="Permalink to this definition">¶</a></dt>
+<dd><p>generate clique indices and insert into dense matrix</p>
+<p>Insert a clique into a dense matrix for testing purposes. This function attemps to
+generate a clique of size clique_size, but may generate a clique that is slightly
+smaller.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dense_matrix</strong> (<em>2d numpy array</em>) &#8211; A densly stored correlation matrix, size N by N.</li>
+<li><strong>sliding_window_width</strong> (<em>int</em>) &#8211; the sliding window width, 1500 by default.</li>
+<li><strong>clique_size</strong> (<em>int</em>) &#8211; The size of the clique that is to be insered into the data, 10 by default.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The dense matrix, a list of clique indices, and the size of the inserted clique.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">tuple(numpy.ndarray, list, int)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="The KM3Net documentation" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Ben van Werkhoven.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

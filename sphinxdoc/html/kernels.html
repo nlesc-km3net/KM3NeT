@@ -1,0 +1,346 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Kernels documentation &mdash; km3net 0.0.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="km3net 0.0.1 documentation" href="index.html"/>
+        <link rel="next" title="Utility functions documentation" href="utils.html"/>
+        <link rel="prev" title="The KM3Net documentation" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> km3net
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Introduction</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Kernels documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#km3net-kernels-quadraticdifferencesparse">km3net.kernels.QuadraticDifferenceSparse</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#km3net-kernels-purgingsparse">km3net.kernels.PurgingSparse</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utility functions documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">km3net</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Kernels documentation</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/kernels.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="toctree-wrapper compound">
+</div>
+<div class="section" id="kernels-documentation">
+<h1>Kernels documentation<a class="headerlink" href="#kernels-documentation" title="Permalink to this headline">¶</a></h1>
+<p>This page shows how to call the GPU kernels from Python.</p>
+<p>To simplify the process of using the GPU kernels we&#8217;ve created
+two Python classes that wrap the GPU kernels and take care
+compiling the kernels and managing GPU memory.</p>
+<p>Currently the kernels module consists of two classes: QuadraticDifferenceSparse and PurgingSparse.
+QuadraticDifferenceSparse takes as input the hits in a timeslice and produces a sparsely stored correlation matrix.
+PurgingSparse processes the correlation matrix to approximate the largest group of hits that are all correlated with eachother.</p>
+<div class="section" id="km3net-kernels-quadraticdifferencesparse">
+<h2>km3net.kernels.QuadraticDifferenceSparse<a class="headerlink" href="#km3net-kernels-quadraticdifferencesparse" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="km3net.kernels.QuadraticDifferenceSparse">
+<em class="property">class </em><code class="descclassname">km3net.kernels.</code><code class="descname">QuadraticDifferenceSparse</code><span class="sig-paren">(</span><em>N</em>, <em>sliding_window_width=1500</em>, <em>cc='52'</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.kernels.QuadraticDifferenceSparse" title="Permalink to this definition">¶</a></dt>
+<dd><p>class that provides an interface to the Quadratic Difference GPU Kernel and maintains GPU state</p>
+<p>instantiate QuadraticDifferenceSparse</p>
+<p>Create the object that provides an interface to the GPU kernel for performing the
+Quadratic Difference algorithm. This implementation of the algorithm stores the
+correlation table in a sparse manner, using CSR notation.</p>
+<p>When this object is instantiated the CUDA kernel
+code is compiled and some of the GPU memory is allocated.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>N</strong> (<em>int</em>) &#8211; The largest number of hits that are to be processed by one iteration
+of the quadratic difference algorithm.</li>
+<li><strong>sliding_window_width</strong> (<em>int</em>) &#8211; The width of the &#8216;window&#8217; in which we look for correlated
+hits. This is related to the size of the detector and the expected rate of background
+induced hits. The value we currently assume is 1500.</li>
+<li><strong>cc</strong> (<em>string</em>) &#8211; The CUDA compute capability of the target device as a string, consisting
+of the major and minor number concatenated without any separators.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="km3net.kernels.QuadraticDifferenceSparse.compute">
+<code class="descname">compute</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>z</em>, <em>ct</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.kernels.QuadraticDifferenceSparse.compute" title="Permalink to this definition">¶</a></dt>
+<dd><p>perform a computation of the quadratic difference algorithm</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>d_x</strong> (<em>numpy ndarray or pycuda.driver.DeviceAllocation</em>) &#8211; an array storing the x-coordinates of the hits,
+either a numpy ndarray or an array stored on the GPU</li>
+<li><strong>d_y</strong> &#8211; an array storing the y-coordinates of the hits,
+either a numpy ndarray or an array stored on the GPU</li>
+<li><strong>d_z</strong> &#8211; an array storing the z-coordinates of the hits,
+either a numpy ndarray or an array stored on the GPU</li>
+<li><strong>d_ct</strong> &#8211; an array storing the &#8216;ct&#8217; value of the hits,
+either a numpy ndarray or an array stored on the GPU
+This is the time in nano seconds multiplied with the speed of light.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">d_col_idx, d_prefix_sums, d_degrees
+d_col_idx, d_prefix_sums: The sparse matrix in CSR notation. d_col_idx stores the column indices,
+the size equals the number of correlations (or edges in the graph).
+d_prefix_sums stores per row, the start index of the row within the column index array. The size of d_prefix_sums is equal to the number of hits.
+d_degrees: The number of correlated hits per hit, stored as an array of size equal to the number of hits.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">tuple( pycuda.driver.DeviceAllocation )</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="km3net-kernels-purgingsparse">
+<h2>km3net.kernels.PurgingSparse<a class="headerlink" href="#km3net-kernels-purgingsparse" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="km3net.kernels.PurgingSparse">
+<em class="property">class </em><code class="descclassname">km3net.kernels.</code><code class="descname">PurgingSparse</code><span class="sig-paren">(</span><em>N</em>, <em>cc</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.kernels.PurgingSparse" title="Permalink to this definition">¶</a></dt>
+<dd><p>class that provides an interface to the GPU Kernels used for Purging and maintains GPU state</p>
+<p>instantiate PurgingSparse</p>
+<p>Create the object that provides an interface to the GPU kernel for performing the
+Purging algorithm on a sparse correlation table. This implementation of the
+algorithm uses the correlation table in a sparse manner, produced by the
+Quadratic Difference Sparse kernel. When this object is instantiated the
+CUDA kernel codes are compiled.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>N</strong> (<em>int</em>) &#8211; The largest number of hits that are to be processed by one iteration
+of the quadratic difference algorithm.</li>
+<li><strong>cc</strong> (<em>string</em>) &#8211; The CUDA compute capability of the target device as a string, consisting
+of the major and minor number concatenated without any separators.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="km3net.kernels.PurgingSparse.compute">
+<code class="descname">compute</code><span class="sig-paren">(</span><em>d_col_idx</em>, <em>d_prefix_sums</em>, <em>d_degrees</em>, <em>shift=0</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.kernels.PurgingSparse.compute" title="Permalink to this definition">¶</a></dt>
+<dd><p>perform purging on a sparse matrix</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>d_col_idx</strong> (<em>pycuda.driver.DeviceAllocation</em>) &#8211; A device allocation storing the column indices of the sparse matrix.
+The size of d_col_idx equals the number of correlations.</li>
+<li><strong>d_prefix_sums</strong> (<em>pycuda.driver.DeviceAllocation</em>) &#8211; The start index of each row within the column index array.
+The size of d_prefix_sums is equal to the number of hits.</li>
+<li><strong>d_degrees</strong> (<em>pycuda.driver.DeviceAllocation</em>) &#8211; The number of correlated hits per hit, stored as an array of size equal to the number of hits.</li>
+<li><strong>shift</strong> (<em>int</em>) &#8211; Optional parameter that can be used to shift the indices of the nodes
+that remain after purging. This could be used when sliding through a larger time
+slice to convert the indices from within the current slice to a global index.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The list of node indices of the nodes that remain after purging.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list ( int )</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="utils.html" class="btn btn-neutral float-right" title="Utility functions documentation" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="The KM3Net documentation" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Ben van Werkhoven.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

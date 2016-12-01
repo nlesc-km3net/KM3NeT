@@ -182,7 +182,9 @@ def create_sparse_matrix(correlations, sums):
     with open(get_kernel_path()+'dense2sparse.cu', 'r') as f:
         kernel_string = f.read()
     args = [row_idx, col_idx, prefix_sums, correlations, N]
-    data = run_kernel("dense2sparse_kernel", kernel_string, (N,1), args, {"block_size_x": 256})
+    params = { "block_size_x": 256, "window_width": correlations.shape[1],
+                "write_sums": 1, "use_shared": 1}
+    data = run_kernel("dense2sparse_kernel", kernel_string, (N,1), args, params)
     return data[0], data[1], prefix_sums
 
 def get_full_matrix(correlations):

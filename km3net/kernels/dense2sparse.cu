@@ -5,6 +5,10 @@
 #define block_size_x 256
 #endif
 
+#ifndef use_shared
+#define use_shared 1
+#endif
+
 #ifndef window_width
 #define window_width 1500
 #endif

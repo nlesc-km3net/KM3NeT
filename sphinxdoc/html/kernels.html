@@ -242,18 +242,18 @@ of the major and minor number concatenated without any separators.</li>
 </table>
 <dl class="method">
 <dt id="km3net.kernels.PurgingSparse.compute">
-<code class="descname">compute</code><span class="sig-paren">(</span><em>d_col_idx</em>, <em>d_prefix_sums</em>, <em>d_degrees</em>, <em>shift=0</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.kernels.PurgingSparse.compute" title="Permalink to this definition">¶</a></dt>
+<code class="descname">compute</code><span class="sig-paren">(</span><em>col_idx</em>, <em>prefix_sums</em>, <em>degrees</em>, <em>shift=0</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.kernels.PurgingSparse.compute" title="Permalink to this definition">¶</a></dt>
 <dd><p>perform purging on a sparse matrix</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>d_col_idx</strong> (<em>pycuda.driver.DeviceAllocation</em>) &#8211; A device allocation storing the column indices of the sparse matrix.
-The size of d_col_idx equals the number of correlations.</li>
-<li><strong>d_prefix_sums</strong> (<em>pycuda.driver.DeviceAllocation</em>) &#8211; The start index of each row within the column index array.
-The size of d_prefix_sums is equal to the number of hits.</li>
-<li><strong>d_degrees</strong> (<em>pycuda.driver.DeviceAllocation</em>) &#8211; The number of correlated hits per hit, stored as an array of size equal to the number of hits.</li>
+<li><strong>col_idx</strong> (<em>numpy.ndarray or pycuda.driver.DeviceAllocation</em>) &#8211; A device allocation storing the column indices of the sparse matrix.
+The size of col_idx equals the number of correlations.</li>
+<li><strong>prefix_sums</strong> (<em>numpy.ndarray or pycuda.driver.DeviceAllocation</em>) &#8211; The start index of each row within the column index array.
+The size of prefix_sums is equal to the number of hits.</li>
+<li><strong>degrees</strong> (<em>numpy.ndarray or pycuda.driver.DeviceAllocation</em>) &#8211; The number of correlated hits per hit, stored as an array of size equal to the number of hits.</li>
 <li><strong>shift</strong> (<em>int</em>) &#8211; Optional parameter that can be used to shift the indices of the nodes
 that remain after purging. This could be used when sliding through a larger time
 slice to convert the indices from within the current slice to a global index.</li>

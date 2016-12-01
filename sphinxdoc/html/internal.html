@@ -173,17 +173,21 @@ of the major and minor number concatenated without any separators.</li>
 </table>
 <dl class="method">
 <dt id="km3net.kernels.QuadraticDifferenceSparse.compute">
-<code class="descname">compute</code><span class="sig-paren">(</span><em>d_x</em>, <em>d_y</em>, <em>d_z</em>, <em>d_ct</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.kernels.QuadraticDifferenceSparse.compute" title="Permalink to this definition">¶</a></dt>
+<code class="descname">compute</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>z</em>, <em>ct</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.kernels.QuadraticDifferenceSparse.compute" title="Permalink to this definition">¶</a></dt>
 <dd><p>perform a computation of the quadratic difference algorithm</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>d_x</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; an array storing the x-coordinates of the hits</li>
-<li><strong>d_y</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; an array storing the y-coordinates of the hits</li>
-<li><strong>d_z</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; an array storing the z-coordinates of the hits</li>
-<li><strong>d_ct</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; an array storing the &#8216;ct&#8217; value of the hits.
+<li><strong>d_x</strong> (<em>numpy ndarray or pycuda.driver.DeviceAllocation</em>) &#8211; an array storing the x-coordinates of the hits,
+either a numpy ndarray or an array stored on the GPU</li>
+<li><strong>d_y</strong> &#8211; an array storing the y-coordinates of the hits,
+either a numpy ndarray or an array stored on the GPU</li>
+<li><strong>d_z</strong> &#8211; an array storing the z-coordinates of the hits,
+either a numpy ndarray or an array stored on the GPU</li>
+<li><strong>d_ct</strong> &#8211; an array storing the &#8216;ct&#8217; value of the hits,
+either a numpy ndarray or an array stored on the GPU
 This is the time in nano seconds multiplied with the speed of light.</li>
 </ul>
 </td>
@@ -299,7 +303,7 @@ use the GPU kernel.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>correlations</strong> (<em>a 2d numpy array of type numpy.uint8</em>) &#8211; A correlations table of size N by sliding_window_width
+<li><strong>correlations</strong> (<em>a 2d numpy array of type numpy.uint8</em>) &#8211; A correlations table of size sliding_window_width by N
 used for storing the result, which is also returned.</li>
 <li><strong>x</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The x-coordinates of the hits</li>
 <li><strong>y</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The y-coordinates of the hits</li>
@@ -308,10 +312,10 @@ used for storing the result, which is also returned.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">correlations table of size N by sliding_window_width.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">correlations table of size sliding_window_width by N.</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy 2d array of type numpy.uint8</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy 2d array</p>
 </td>
 </tr>
 </tbody>
@@ -615,6 +619,70 @@ smaller.</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">tuple(numpy.ndarray, list, int)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="km3net.util.memcpy_dtoh">
+<code class="descclassname">km3net.util.</code><code class="descname">memcpy_dtoh</code><span class="sig-paren">(</span><em>d_x</em>, <em>N</em>, <em>dtype</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.memcpy_dtoh" title="Permalink to this definition">¶</a></dt>
+<dd><p>helper func to copy data from the GPU</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>d_x</strong> (<em>pycuda.driver.DeviceAllocation</em>) &#8211; Array on the GPU</li>
+<li><strong>N</strong> (<em>int</em>) &#8211; Number of elements in GPU array</li>
+<li><strong>dtype</strong> (<em>numpy.dtype</em>) &#8211; Type of the array</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A numpy array copy of the GPU array of size N, and data type dtype.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy.ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="km3net.util.sparse_to_dense">
+<code class="descclassname">km3net.util.</code><code class="descname">sparse_to_dense</code><span class="sig-paren">(</span><em>prefix_sums</em>, <em>col_idx</em>, <em>N=None</em>, <em>hits=None</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.sparse_to_dense" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a sparse matrix to a dense matrix</p>
+<p>Helper function to convert a sparse matrix in CSR format to a
+dense 2d matrix of size N by N.
+This function should only be used for testing purposes on small
+correlations tables as the full correlations matrix is typically
+huge and nearly empty.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>prefix_sums</strong> (<em>numpy ndarray or pycuda.driver.DeviceAllocation</em>) &#8211; This is the row_start array of the CSR format.
+It contains the start index of each row within the col_idx array. Note that
+row 0 starts on position 0 implicitly, so the the first number in the
+prefix_sums array is actually the start index of row 1, which is also
+the number of elements on row 0. The size of this array is equal to
+the number of rows.</li>
+<li><strong>col_idx</strong> (<em>numpy ndarray or pycuda.driver.DeviceAllocation</em>) &#8211; This array stores the column indices of the CSR format.
+The size of this array is equal to the number of elements in the matrix.</li>
+<li><strong>N</strong> (<em>int</em>) &#8211; The number of hits, only needs to be passed when prefix_sums is
+passed as a pycuda.driver.DeviceAllocation instead of a numpy array</li>
+<li><strong>hits</strong> (<em>int</em>) &#8211; The number of correlated hits, only needs to be passed when col_idx is
+passed as a pycuda.driver.DeviceAllocation instead of a numpy array</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A full densely stored correlation matrix of size N by N.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy ndarray</p>
 </td>
 </tr>
 </tbody>

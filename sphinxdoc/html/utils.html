@@ -269,6 +269,41 @@ The sparse notation used is CSR.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="km3net.util.dense_to_sparse">
+<code class="descclassname">km3net.util.</code><code class="descname">dense_to_sparse</code><span class="sig-paren">(</span><em>dense_matrix</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.dense_to_sparse" title="Permalink to this definition">¶</a></dt>
+<dd><p>convert dense matrix into sparse matrix</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dense_matrix</strong> (<em>numpy.ndarray</em>) &#8211; a dense matrix, stored as a 2d array of size N by N.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The sparse matrix stored in CSR format.<blockquote>
+<div><ul>
+<li>d_col_idx stores the column indices, the size equals the number of correlations (or edges in the graph).</li>
+<li><dl class="first docutils">
+<dt>d_prefix_sums stores per row, the start index of the row within the column index array.</dt>
+<dd>The size of d_prefix_sums is equal to the number of hits.</dd>
+</dl>
+</li>
+<li>d_degrees: The number of correlated hits per hit, stored as an array of size equal to the number of hits.</li>
+</ul>
+</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">rtype:</th><td class="field-body">tuple( numpy.ndarray )</td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="km3net.util.generate_correlations_table">
 <code class="descclassname">km3net.util.</code><code class="descname">generate_correlations_table</code><span class="sig-paren">(</span><em>N</em>, <em>sliding_window_width</em>, <em>cutoff=2.87</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.generate_correlations_table" title="Permalink to this definition">¶</a></dt>
 <dd><p>generate input data with an expected density of correlated hits</p>
@@ -521,6 +556,24 @@ smaller.</p>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy.ndarray</p>
 </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="km3net.util.ready_input">
+<code class="descclassname">km3net.util.</code><code class="descname">ready_input</code><span class="sig-paren">(</span><em>arg</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.ready_input" title="Permalink to this definition">¶</a></dt>
+<dd><p>helper func to move Numpy arrays to the GPU if needed</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>arg</strong> (<em>numpy.ndarray or pycuda.driver.DeviceAllocation</em>) &#8211; The array that needs to be used on the GPU.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The array in GPU memory</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">pycuda.driver.DeviceAllocation</td>
 </tr>
 </tbody>
 </table>

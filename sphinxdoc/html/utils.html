@@ -242,6 +242,8 @@ considered correlated. By default 0.0.</li>
 <p>This function compiles the dense2sparse GPU kernel and calls it convert a
 densely stored correlations table into a sparsely stored correlation matrix.
 The sparse notation used is CSR.</p>
+<p>This routine uses a transposed correlations table of N by window_width, whereas
+most other routines use window_width by N, this needs to be fixed.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />

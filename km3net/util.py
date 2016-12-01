@@ -2,6 +2,7 @@ from __future__ import print_function
 import os
 import pandas
 import numpy as np
+from scipy.sparse import csr_matrix
 import scipy.constants
 from kernel_tuner import run_kernel
 
@@ -290,7 +291,7 @@ def dense_to_sparse(dense_matrix):
 
         :rtype: tuple( numpy.ndarray )
     """
-    degrees = np.sum(dense_matrix, axis=0)
+    degrees = np.sum(dense_matrix, axis=1)
     prefix_sum = np.cumsum(degrees)
     col_idx = csr_matrix(dense_matrix).nonzero()[1]
     return col_idx, prefix_sum, degrees
@@ -535,7 +536,7 @@ def ready_input(arg):
     """
     if isinstance(arg, np.ndarray):
         return allocate_and_copy(arg)
-    elif isinstance(drv.DeviceAllocation):
+    elif isinstance(arg, drv.DeviceAllocation):
         return arg
     else:
         raise TypeError("Argument is not numpy ndarray or pycuda.driver.DeviceAllocation")

@@ -160,6 +160,9 @@ def create_sparse_matrix(correlations, sums):
     densely stored correlations table into a sparsely stored correlation matrix.
     The sparse notation used is CSR.
 
+    This routine uses a transposed correlations table of N by window_width, whereas
+    most other routines use window_width by N, this needs to be fixed.
+
     :param correlations: A correlations table of size N by sliding_window_width
     :type correlations: a 2d numpy array of type numpy.uint8
 

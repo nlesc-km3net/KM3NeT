@@ -250,11 +250,15 @@ __global__ void quadratic_difference_full(int *__restrict__ row_idx, int *__rest
 }
 
 
+
 #ifndef shared_memory_size
 #define shared_memory_size 10*block_size_x
 #endif
 
 /*
+ * This kernel is an experimental version of the above quadratic_difference_full kernel.
+ * It is not production ready and needs more work.
+ *
  * This kernel uses warp-shuffle instructions to re-use many of
  * the input values in registers and reduce the pressure on shared memory.
  * However, it does this so drastically that shared memory is hardly needed anymore.

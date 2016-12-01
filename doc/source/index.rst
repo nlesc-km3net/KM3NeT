@@ -27,13 +27,13 @@ through the detector.
 
 Installation
 ------------
-Clone the repository  
-    ``git clone git@github.com:benvanwerkhoven/KM3Net.git``  
-Change into the top-level directory  
-    ``cd KM3Net``  
-Install using  
-    ``pip install -r requirements.txt``  
-    ``pip install .``
+| Clone the repository  
+|     ``git clone git@github.com:benvanwerkhoven/KM3Net.git``  
+| Change into the top-level directory  
+|     ``cd KM3Net``  
+| Install using  
+|     ``pip install -r requirements.txt``  
+|     ``pip install .``
 
 
 Dependencies

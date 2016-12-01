@@ -5,9 +5,10 @@ from scipy.sparse import csr_matrix
 from km3net.kernels import QuadraticDifferenceSparse
 import km3net.util as util
 
-from .context import create_plot
+from .context import create_plot, skip_if_no_cuda_device
 
 def test_QuadraticDifferenceSparse():
+    skip_if_no_cuda_device()
 
     N = 500
     window_width = 150

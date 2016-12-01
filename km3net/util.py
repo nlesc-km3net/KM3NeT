@@ -275,6 +275,26 @@ def sparse_to_dense(prefix_sums, col_idx, N=None, hits=None):
         start = end
     return matrix
 
+def dense_to_sparse(dense_matrix):
+    """ convert dense matrix into sparse matrix
+
+    :param dense_matrix: a dense matrix, stored as a 2d array of size N by N.
+    :type dense_matrix: numpy.ndarray
+
+    :returns: The sparse matrix stored in CSR format.
+
+         * d_col_idx stores the column indices, the size equals the number of correlations (or edges in the graph).
+         * d_prefix_sums stores per row, the start index of the row within the column index array.
+                The size of d_prefix_sums is equal to the number of hits.
+         * d_degrees: The number of correlated hits per hit, stored as an array of size equal to the number of hits.
+
+        :rtype: tuple( numpy.ndarray )
+    """
+    degrees = np.sum(dense_matrix, axis=0)
+    prefix_sum = np.cumsum(degrees)
+    col_idx = csr_matrix(dense_matrix).nonzero()[1]
+    return col_idx, prefix_sum, degrees
+
 def generate_input_data(N, factor=2000.0):
     """ generate input data
 
@@ -502,3 +522,22 @@ def insert_clique(dense_matrix, sliding_window_width=1500, clique_size=10):
                 dense_matrix[i,j] = 1
                 dense_matrix[j,i] = 1
     return (dense_matrix, clique_indices, clique_size)
+
+
+def ready_input(arg):
+    """ helper func to move Numpy arrays to the GPU if needed
+
+    :param arg: The array that needs to be used on the GPU.
+    :type arg: numpy.ndarray or pycuda.driver.DeviceAllocation
+
+    :returns: The array in GPU memory
+    :rtype: pycuda.driver.DeviceAllocation
+    """
+    if isinstance(arg, np.ndarray):
+        return allocate_and_copy(arg)
+    elif isinstance(drv.DeviceAllocation):
+        return arg
+    else:
+        raise TypeError("Argument is not numpy ndarray or pycuda.driver.DeviceAllocation")
+
+

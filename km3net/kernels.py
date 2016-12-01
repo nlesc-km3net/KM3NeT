@@ -84,14 +84,6 @@ class QuadraticDifferenceSparse(object):
         :rtype: tuple( pycuda.driver.DeviceAllocation )
 
         """
-        def ready_input(arg):
-            if isinstance(arg, np.ndarray):
-                return allocate_and_copy(arg)
-            elif isinstance(drv.DeviceAllocation):
-                return arg
-            else:
-                raise TypeError("Argument is not numpy ndarray or pycuda.driver.DeviceAllocation")
-
         d_x = ready_input(x)
         d_y = ready_input(y)
         d_z = ready_input(z)
@@ -171,30 +163,32 @@ class PurgingSparse(object):
 
 
 
-    def compute(self, d_col_idx, d_prefix_sums, d_degrees, shift=0):
+    def compute(self, col_idx, prefix_sums, degrees, shift=0):
         """ perform purging on a sparse matrix
 
-        :param d_col_idx: A device allocation storing the column indices of the sparse matrix.
-            The size of d_col_idx equals the number of correlations.
-        :type d_col_idx: pycuda.driver.DeviceAllocation
+        :param col_idx: A device allocation storing the column indices of the sparse matrix.
+            The size of col_idx equals the number of correlations.
+        :type col_idx: numpy.ndarray or pycuda.driver.DeviceAllocation
 
-        :param d_prefix_sums: The start index of each row within the column index array.
-            The size of d_prefix_sums is equal to the number of hits.
-        :type d_prefix_sums: pycuda.driver.DeviceAllocation
+        :param prefix_sums: The start index of each row within the column index array.
+            The size of prefix_sums is equal to the number of hits.
+        :type prefix_sums: numpy.ndarray or pycuda.driver.DeviceAllocation
 
-        :param d_degrees: The number of correlated hits per hit, stored as an array of size equal to the number of hits.
-        :type d_degrees: pycuda.driver.DeviceAllocation
+        :param degrees: The number of correlated hits per hit, stored as an array of size equal to the number of hits.
+        :type degrees: numpy.ndarray or pycuda.driver.DeviceAllocation
 
         :param shift: Optional parameter that can be used to shift the indices of the nodes
             that remain after purging. This could be used when sliding through a larger time
             slice to convert the indices from within the current slice to a global index.
         :type shift: int
 
-
         :returns: The list of node indices of the nodes that remain after purging.
         :rtype: list ( int )
 
         """
+        d_col_idx = ready_input(col_idx)
+        d_prefix_sums = ready_input(prefix_sums)
+        d_degrees = ready_input(degrees)
 
         minimum = np.zeros(self.max_blocks).astype(np.int32)
         num_nodes = np.zeros(self.max_blocks).astype(np.int32)

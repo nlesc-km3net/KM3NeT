@@ -6,3 +6,4 @@ doc/create_doc.sh
 *.egg-info
 /temp
 .ipynb_checkpoints
+core.*

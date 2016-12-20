@@ -321,10 +321,10 @@ def generate_input_data(N, factor=2000.0):
     :rtype: tuple(numpy ndarray of type numpy.float32)
 
     """
-    x = np.random.normal(0.2, 0.1, N).astype(np.float32)
-    y = np.random.normal(0.2, 0.1, N).astype(np.float32)
-    z = np.random.normal(0.2, 0.1, N).astype(np.float32)
-    ct = (factor*np.random.normal(0.5, 0.06, N)).astype(np.float32)  #replace 2000 with 18 for the new density of roughly 0.23
+    x = np.random.normal(500, 125, N).astype(np.float32)
+    y = np.random.normal(500, 125, N).astype(np.float32)
+    z = np.random.normal(500, 125, N).astype(np.float32)
+    ct = np.sort((np.random.normal(0.5*N, 500*factor, N))).astype(np.float32)
     return x,y,z,ct
 
 

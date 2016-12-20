@@ -11,4 +11,4 @@ from km3net.util import generate_input_data
 from correlate_full import tune_correlate_full_kernel
 
 if __name__ == "__main__":
-    tune_correlate_full_kernel("quadratic_difference_full")
+    tune_correlate_full_kernel("match3b_full")

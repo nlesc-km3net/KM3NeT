@@ -6,43 +6,50 @@ from nose.tools import nottest
 from kernel_tuner import run_kernel
 
 from .context import skip_if_no_cuda_device, create_plot
-from km3net.util import get_kernel_path, get_full_matrix, correlations_cpu, generate_input_data, sparse_to_dense
+from km3net.util import get_kernel_path, get_full_matrix, correlations_cpu, correlations_cpu_3B, generate_input_data, sparse_to_dense, get_real_input_data
 
 def test_quadratic_difference_full_sums_impl1():
-    test_quadratic_difference_full_sums("quadratic_difference_full")
+    test_quadratic_difference_full_sums("quadratic_difference_full", "qd")
+
+def test_match3b_full_sums():
+    test_quadratic_difference_full_sums("match3b_full", "3b")
 
 @nottest
 def test_quadratic_difference_full_sums_impl2():
     test_quadratic_difference_full_sums("quadratic_difference_full_shfl")
 
 @nottest
-def test_quadratic_difference_full_sums(kernel_name):
+def test_quadratic_difference_full_sums(kernel_name, mode="qd"):
     skip_if_no_cuda_device()
 
-    with open(get_kernel_path()+'quadratic_difference_full.cu', 'r') as f:
+    with open(get_kernel_path()+"correlate_full.cu", 'r') as f:
         kernel_string = f.read()
 
     N = np.int32(600)
-    sliding_window_width = np.int32(300)
+    sliding_window_width = np.int32(150)
     problem_size = (N, 1)
 
-    x,y,z,ct = generate_input_data(N)
+    x,y,z,ct = generate_input_data(N, factor=18.0)
 
     correlations_ref = np.zeros((sliding_window_width, N), 'uint8')
+    #compute reference answer
+    if mode == "qd":
+        correlations_ref = correlations_cpu(correlations_ref, x, y, z, ct)
+    elif mode == "3b":
+        ct = ct / 0.299792458
+        correlations_ref = correlations_cpu_3B(correlations_ref, x, y, z, ct)
+    corr_matrix = get_full_matrix(correlations_ref)
+
     sums = np.zeros(N).astype(np.int32)
     row_idx = np.zeros(10).astype(np.int32)         #not used in this test
     col_idx = np.zeros(10).astype(np.int32)         #not used in this test
     prefix_sums = np.zeros(10).astype(np.int32)     #not used in this test
 
-    args = [row_idx, col_idx, prefix_sums, sums, N, sliding_window_width, x, y, z, ct]
-
     #call the CUDA kernel
-    params = { "block_size_x": 128, "write_sums": 1, 'window_width': sliding_window_width, 'tile_size_x': 1 }
-    answer = run_kernel(kernel_name, kernel_string, problem_size, args, params)
+    params = { "block_size_x": 256, "write_sums": 1, 'window_width': sliding_window_width, 'tile_size_x': 1 }
 
-    #compute reference answer
-    correlations_ref = correlations_cpu(correlations_ref, x, y, z, ct)
-    corr_matrix = get_full_matrix(correlations_ref)
+    args = [row_idx, col_idx, prefix_sums, sums, N, sliding_window_width, x, y, z, ct]
+    answer = run_kernel(kernel_name, kernel_string, problem_size, args, params, compiler_options=["--std=c++11"])
 
     sums_ref = np.sum(corr_matrix, axis=0)
     #sums_ref = np.sum(correlations_ref, axis=0)
@@ -61,31 +68,37 @@ def test_quadratic_difference_full_sums(kernel_name):
 
 
 def test_quadratic_difference_full_sparse_matrix_impl1():
-    test_quadratic_difference_full_sparse_matrix("quadratic_difference_full")
+    test_quadratic_difference_full_sparse_matrix("quadratic_difference_full", "qd")
+
+def test_match3b_full_sparse_matrix():
+    test_quadratic_difference_full_sparse_matrix("match3b_full", "3b")
 
 @nottest
 def test_quadratic_difference_full_sparse_matrix_impl2():
     test_quadratic_difference_full_sparse_matrix("quadratic_difference_full_shfl")
 
-
 @nottest
-def test_quadratic_difference_full_sparse_matrix(kernel_name):
+def test_quadratic_difference_full_sparse_matrix(kernel_name, mode):
     skip_if_no_cuda_device()
 
-    with open(get_kernel_path()+'quadratic_difference_full.cu', 'r') as f:
+    with open(get_kernel_path()+"correlate_full.cu", 'r') as f:
         kernel_string = f.read()
 
+    #N,x,y,z,ct = get_real_input_data("/var/scratch/bwn200/KM3Net/event1-crop.txt")
     N = np.int32(600)
-    sliding_window_width = np.int32(300)
+    sliding_window_width = np.int32(150)
     problem_size = (N, 1)
-
-    x,y,z,ct = generate_input_data(N)
+    x,y,z,ct = generate_input_data(N, factor=18.0)
 
     #compute reference answer
     correlations_ref = np.zeros((sliding_window_width, N), 'uint8')
-    correlations_ref = correlations_cpu(correlations_ref, x, y, z, ct)
+    if mode == "qd":
+        correlations_ref = correlations_cpu(correlations_ref, x, y, z, ct)
+    elif mode == "3b":
+        ct = ct / 0.299792458
+        correlations_ref = correlations_cpu_3B(correlations_ref, x, y, z, ct)
     corr_matrix = get_full_matrix(correlations_ref)
-    sums_ref = np.sum(corr_matrix, axis=0)
+    sums_ref = np.sum(corr_matrix, axis=1)
     total_correlated_hits = corr_matrix.sum()
 
     sums = sums_ref.astype(np.int32)
@@ -96,7 +109,7 @@ def test_quadratic_difference_full_sparse_matrix(kernel_name):
     args = [row_idx, col_idx, prefix_sums, sums, N, sliding_window_width, x, y, z, ct]
 
     #call the CUDA kernel
-    params = { "block_size_x": 128, "write_spm": 1, 'write_rows': 1, 'window_width': sliding_window_width, 'tile_size_x': 1 }
+    params = { "block_size_x": 256, "write_spm": 1, 'write_rows': 1, 'window_width': sliding_window_width, 'tile_size_x': 1 }
     answer = run_kernel(kernel_name, kernel_string, problem_size, args, params)
 
     reference = csr_matrix(corr_matrix)
@@ -109,11 +122,10 @@ def test_quadratic_difference_full_sparse_matrix(kernel_name):
     print("col_idx")
     print(col_idx)
 
-    col_idx = answer[1]
-    answer = csr_matrix((np.ones_like(row_idx), (row_idx, col_idx)), shape=(N,N))
-
     print("reference")
     print(list(zip(reference.nonzero()[0], reference.nonzero()[1])))
+
+    answer = csr_matrix((np.ones_like(row_idx), (row_idx, col_idx)), shape=(N,N))
 
     print("answer")
     print(list(zip(answer.nonzero()[0], answer.nonzero()[1])))

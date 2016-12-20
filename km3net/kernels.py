@@ -37,18 +37,18 @@ class QuadraticDifferenceSparse(object):
         self.N = np.int32(N)
         self.sliding_window_width = np.int32(sliding_window_width)
 
-        with open(get_kernel_path()+'quadratic_difference_full.cu', 'r') as f:
+        with open(get_kernel_path()+'correlate_full.cu', 'r') as f:
             kernel_string = f.read()
         block_size_x = 128
         prefix = "#define block_size_x " + str(block_size_x) + "\n" + "#define window_width " + str(sliding_window_width) + "\n"
         kernel_string = prefix + kernel_string
 
-        self.quadratic_difference_sums = SourceModule("#define write_sums 1\n" + kernel_string, options=['-Xcompiler=-Wall'],
+        self.quadratic_difference_sums = SourceModule("#define write_sums 1\n" + kernel_string, options=['-Xcompiler=-Wall', '--std=c++11', '-O3'],
                     arch='compute_' + cc, code='sm_' + cc,
-                    cache_dir=False).get_function("quadratic_difference_full")
-        self.quadratic_difference_sparse_matrix = SourceModule("#define write_spm 1\n" + kernel_string, options=['-Xcompiler=-Wall'],
+                    cache_dir=False, no_extern_c=True).get_function("quadratic_difference_full")
+        self.quadratic_difference_sparse_matrix = SourceModule("#define write_spm 1\n" + kernel_string, options=['-Xcompiler=-Wall', '--std=c++11', '-O3'],
                     arch='compute_' + cc, code='sm_' + cc,
-                    cache_dir=False).get_function("quadratic_difference_full")
+                    cache_dir=False, no_extern_c=True).get_function("quadratic_difference_full")
 
         self.threads = (block_size_x, 1, 1)
         self.grid = (int(np.ceil(N/float(block_size_x))), 1)

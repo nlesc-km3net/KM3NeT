@@ -1,13 +1,18 @@
 from .context import skip_if_no_cuda_device
 
 import numpy as np
-
+import os
 from km3net.util import *
 
 #this test verifies that we are testing
 #the current repository package rather than the installed package
 def test_get_kernel_path():
-    pass
+    path = "/".join(os.path.dirname(os.path.realpath(__file__)).split('/')[:-1])
+    reference = path+'/km3net/kernels/'
+    print(reference)
+    answer = get_kernel_path()
+    print(answer)
+    assert reference == answer
 
 #reading or generating input
 def test_get_real_input_data():

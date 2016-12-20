@@ -324,7 +324,7 @@ def generate_input_data(N, factor=2000.0):
     x = np.random.normal(0.2, 0.1, N).astype(np.float32)
     y = np.random.normal(0.2, 0.1, N).astype(np.float32)
     z = np.random.normal(0.2, 0.1, N).astype(np.float32)
-    ct = (factor*np.random.normal(0.5, 0.06, N)).astype(np.float32)  #replace 2000 with 5 for the new density
+    ct = (factor*np.random.normal(0.5, 0.06, N)).astype(np.float32)  #replace 2000 with 18 for the new density of roughly 0.23
     return x,y,z,ct
 
 
@@ -366,7 +366,7 @@ def get_real_input_data(filename):
     return N,x,y,z,ct
 
 
-def correlations_cpu_3B(correlations, x, y, z, ct, roadwidth=90.0, tmax=0.0):
+def correlations_cpu_3B(correlations, x, y, z, t, roadwidth=90.0, tmax=0.0):
     """ function for computing the reference answer using only the 3B condition
 
     This function computes the Match 3B criterion instead of the quadratic
@@ -388,8 +388,8 @@ def correlations_cpu_3B(correlations, x, y, z, ct, roadwidth=90.0, tmax=0.0):
     :param z: The z-coordinates of the hits
     :type z: numpy ndarray of type numpy.float32
 
-    :param ct: The ct values of the hits
-    :type ct: numpy ndarray of type numpy.float32
+    :param t: The t values of the hits in nano seconds
+    :type t: numpy ndarray of type numpy.float32
 
     :param roadwidth: The roadwidth used in the 3B criterion, the assumed
         distance a photon can travel through seawater. Default is 90.0.
@@ -428,21 +428,21 @@ def correlations_cpu_3B(correlations, x, y, z, ct, roadwidth=90.0, tmax=0.0):
     Rst = Rs * tan_theta_c
     Rt = R * tan_theta_c
 
+
     #our ct is in meters, convert back to nanoseconds
-    t = ct * inverse_c
+    #t = ct * inverse_c
     def test_3B_condition(t1,x1,y1,z1, t2,x2,y2,z2):
-        diffx = x1-x2
-        diffy = y2-y2
-        diffz = z2-z2
-        d2 = diffx**2 + diffy**2 + diffz**2
-        difft = np.absolute(t1 - t2)
+        d2 = d2 = ((x1-x2)*(x1-x2)) + ((y1-y2)*(y1-y2)) + ((z1-z2)*(z1-z2))
+
+        difft = np.fabs(t1 - t2)
+        dmax = 0.0
+        dmin = 0.0
 
         if d2 < D02:
             dmax = np.sqrt(d2) * index_of_refrac
         else:
             dmax = np.sqrt(d2 - Rs2) + Rst
-
-        if difft > dmax * inverse_c + TMaxExtra:
+        if difft > (dmax * inverse_c + TMaxExtra):
             return False
 
         if d2 > D22:
@@ -452,13 +452,13 @@ def correlations_cpu_3B(correlations, x, y, z, ct, roadwidth=90.0, tmax=0.0):
         else:
             return True
 
-        return difft >= dmin * inverse_c - TMaxExtra
+        return (difft >= (dmin * inverse_c - TMaxExtra))
 
     for i in range(correlations.shape[1]):
         for j in range(i + 1, i + correlations.shape[0] + 1):
             if j < correlations.shape[1]:
                 if test_3B_condition(t[i],x[i],y[i],z[i],t[j],x[j],y[j],z[j]):
-                   correlations[j - i - 1, i] = 1
+                    correlations[j - i - 1, i] = 1
     return correlations
 
 

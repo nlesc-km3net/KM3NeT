@@ -51,7 +51,7 @@ Dependencies
 Example usage
 -------------
 Example on how to use the software has been documented in a Jupyter Notebook,
-which can be viewed [here](https://github.com/benvanwerkhoven/KM3Net/blob/master/notebooks/Example.ipynb).
+which can be viewed `here <https://github.com/benvanwerkhoven/KM3Net/blob/master/notebooks/Example.ipynb>`_.
 
 
 Contributors

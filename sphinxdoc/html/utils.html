@@ -200,7 +200,7 @@ used for storing the result, which is also returned.</li>
 
 <dl class="function">
 <dt id="km3net.util.correlations_cpu_3B">
-<code class="descclassname">km3net.util.</code><code class="descname">correlations_cpu_3B</code><span class="sig-paren">(</span><em>correlations</em>, <em>x</em>, <em>y</em>, <em>z</em>, <em>ct</em>, <em>roadwidth=90.0</em>, <em>tmax=0.0</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.correlations_cpu_3B" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">km3net.util.</code><code class="descname">correlations_cpu_3B</code><span class="sig-paren">(</span><em>correlations</em>, <em>x</em>, <em>y</em>, <em>z</em>, <em>t</em>, <em>roadwidth=90.0</em>, <em>tmax=0.0</em><span class="sig-paren">)</span><a class="headerlink" href="#km3net.util.correlations_cpu_3B" title="Permalink to this definition">¶</a></dt>
 <dd><p>function for computing the reference answer using only the 3B condition</p>
 <p>This function computes the Match 3B criterion instead of the quadratic
 difference criterion. The 3B criterion is similar to the quadratic difference
@@ -217,7 +217,7 @@ used for storing the result, which is also returned.</li>
 <li><strong>x</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The x-coordinates of the hits</li>
 <li><strong>y</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The y-coordinates of the hits</li>
 <li><strong>z</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The z-coordinates of the hits</li>
-<li><strong>ct</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The ct values of the hits</li>
+<li><strong>t</strong> (<em>numpy ndarray of type numpy.float32</em>) &#8211; The t values of the hits in nano seconds</li>
 <li><strong>roadwidth</strong> (<em>float</em>) &#8211; The roadwidth used in the 3B criterion, the assumed
 distance a photon can travel through seawater. Default is 90.0.</li>
 <li><strong>tmax</strong> (<em>float</em>) &#8211; The maximum time between two hits for them to always be

@@ -6,56 +6,36 @@ from pycuda.compiler import SourceModule
 
 from km3net.util import *
 
-class QuadraticDifferenceSparse(object):
-    """ class that provides an interface to the Quadratic Difference GPU Kernel and maintains GPU state"""
+class CorrelateSparse(object):
+    """ Base class for kernels that correlate hits and output a sparse matrix """
 
-    def __init__(self, N, sliding_window_width=1500, cc='52'):
-        """instantiate QuadraticDifferenceSparse
+    def __init__(self, N, sliding_window_width, cc, kernel_name, block_size_x):
+        """ Generic constructor, to be overridden by subclasses
 
-        Create the object that provides an interface to the GPU kernel for performing the
-        Quadratic Difference algorithm. This implementation of the algorithm stores the
-        correlation table in a sparse manner, using CSR notation.
-
-        When this object is instantiated the CUDA kernel
-        code is compiled and some of the GPU memory is allocated.
-
-        :param N: The largest number of hits that are to be processed by one iteration
-                of the quadratic difference algorithm.
-        :type N: int
-
-        :param sliding_window_width: The width of the 'window' in which we look for correlated
-                hits. This is related to the size of the detector and the expected rate of background
-                induced hits. The value we currently assume is 1500.
-        :type sliding_window_width: int
-
-        :param cc: The CUDA compute capability of the target device as a string, consisting
-                of the major and minor number concatenated without any separators.
-        :type cc: string
-
+        Subclasses should call this constructor with the right kernel_name
         """
-
         self.N = np.int32(N)
         self.sliding_window_width = np.int32(sliding_window_width)
-
-        with open(get_kernel_path()+'correlate_full.cu', 'r') as f:
-            kernel_string = f.read()
-        block_size_x = 128
-        prefix = "#define block_size_x " + str(block_size_x) + "\n" + "#define window_width " + str(sliding_window_width) + "\n"
-        kernel_string = prefix + kernel_string
-
-        self.quadratic_difference_sums = SourceModule("#define write_sums 1\n" + kernel_string, options=['-Xcompiler=-Wall', '--std=c++11', '-O3'],
-                    arch='compute_' + cc, code='sm_' + cc,
-                    cache_dir=False, no_extern_c=True).get_function("quadratic_difference_full")
-        self.quadratic_difference_sparse_matrix = SourceModule("#define write_spm 1\n" + kernel_string, options=['-Xcompiler=-Wall', '--std=c++11', '-O3'],
-                    arch='compute_' + cc, code='sm_' + cc,
-                    cache_dir=False, no_extern_c=True).get_function("quadratic_difference_full")
-
         self.threads = (block_size_x, 1, 1)
         self.grid = (int(np.ceil(N/float(block_size_x))), 1)
 
-    def compute(self, x, y, z, ct):
-        """ perform a computation of the quadratic difference algorithm
+        with open(get_kernel_path()+'correlate_full.cu', 'r') as f:
+            kernel_string = f.read()
+        prefix = "#define block_size_x " + str(block_size_x) + "\n" + "#define window_width " + str(sliding_window_width) + "\n"
+        kernel_string = prefix + kernel_string
 
+        compiler_options = ['-Xcompiler=-Wall', '--std=c++11', '-O3']
+
+        self.compute_sums = SourceModule("#define write_sums 1\n" + kernel_string, options=compiler_options,
+                    arch='compute_' + cc, code='sm_' + cc,
+                    cache_dir=False, no_extern_c=True).get_function(kernel_name)
+        self.compute_sparse_matrix = SourceModule("#define write_spm 1\n" + kernel_string, options=compiler_options,
+                    arch='compute_' + cc, code='sm_' + cc,
+                    cache_dir=False, no_extern_c=True).get_function(kernel_name)
+
+
+    def compute(self, x, y, z, ct):
+        """ perform a computation of the correlating algorithm and produce sparse matrix
 
         :param d_x: an array storing the x-coordinates of the hits,
             either a numpy ndarray or an array stored on the GPU
@@ -73,7 +53,6 @@ class QuadraticDifferenceSparse(object):
             either a numpy ndarray or an array stored on the GPU
             This is the time in nano seconds multiplied with the speed of light.
         :type d_x: numpy ndarray or pycuda.driver.DeviceAllocation
-
 
         :returns: d_col_idx, d_prefix_sums, d_degrees
             d_col_idx, d_prefix_sums: The sparse matrix in CSR notation. d_col_idx stores the column indices,
@@ -101,7 +80,7 @@ class QuadraticDifferenceSparse(object):
         d_prefix_sums = allocate_and_copy(prefix_sums)
 
         args_list = [d_row_idx, d_col_idx, d_prefix_sums, d_degrees, self.N, self.sliding_window_width, d_x, d_y, d_z, d_ct]
-        self.quadratic_difference_sums(*args_list, block=self.threads, grid=self.grid, stream=None, shared=0)
+        self.compute_sums(*args_list, block=self.threads, grid=self.grid, stream=None, shared=0)
 
         #allocate space to store sparse matrix
         drv.memcpy_dtoh(degrees, d_degrees)
@@ -113,9 +92,72 @@ class QuadraticDifferenceSparse(object):
         d_prefix_sums = allocate_and_copy(prefix_sums)
 
         args_list2 = [d_row_idx, d_col_idx, d_prefix_sums, d_degrees, self.N, self.sliding_window_width, d_x, d_y, d_z, d_ct]
-        self.quadratic_difference_sparse_matrix(*args_list2, block=self.threads, grid=self.grid, stream=None, shared=0)
+        self.compute_sparse_matrix(*args_list2, block=self.threads, grid=self.grid, stream=None, shared=0)
 
         return d_col_idx, d_prefix_sums, d_degrees, total_correlated_hits
+
+
+class QuadraticDifferenceSparse(CorrelateSparse):
+    """ class that provides an interface to the Quadratic Difference GPU Kernel and maintains GPU state"""
+
+    def __init__(self, N, sliding_window_width=1500, cc='52'):
+        """instantiate QuadraticDifferenceSparse
+
+        Create the object that provides an interface to the GPU kernel for performing the
+        Quadratic Difference algorithm. This implementation of the algorithm stores the
+        correlation table in a sparse manner, using CSR notation.
+
+        When this object is instantiated the CUDA kernel
+        code is compiled and some of the GPU memory is allocated.
+
+        :param N: The largest number of hits that are to be processed by one iteration
+                of the quadratic difference algorithm.
+        :type N: int
+
+        :param sliding_window_width: The width of the 'window' in which we look for correlated
+                hits. This is related to the size of the detector and the expected rate of background
+                induced hits. The value we currently assume is 1500.
+        :type sliding_window_width: int
+
+        :param cc: The CUDA compute capability of the target device as a string, consisting
+                of the major and minor number concatenated without any separators.
+        :type cc: string
+
+        """
+        block_size_x = 256
+        super().__init__(N, sliding_window_width, cc, "quadratic_difference_full", block_size_x)
+
+
+class Match3BSparse(CorrelateSparse):
+    """ class that provides an interface to the Match 3B GPU Kernel and maintains GPU state"""
+
+    def __init__(self, N, sliding_window_width=1500, cc='52'):
+        """instantiate Match3BSparse
+
+        Create the object that provides an interface to the GPU kernel for performing the
+        Match 3B algorithm. This implementation of the algorithm stores the
+        correlation table in a sparse manner, using CSR notation.
+
+        When this object is instantiated the CUDA kernel
+        code is compiled and some of the GPU memory is allocated.
+
+        :param N: The largest number of hits that are to be processed by one iteration
+                of the match 3b algorithm.
+        :type N: int
+
+        :param sliding_window_width: The width of the 'window' in which we look for correlated
+                hits. This is related to the size of the detector and the expected rate of background
+                induced hits. The value we currently assume is 1500.
+        :type sliding_window_width: int
+
+        :param cc: The CUDA compute capability of the target device as a string, consisting
+                of the major and minor number concatenated without any separators.
+        :type cc: string
+
+        """
+        block_size_x = 512
+        super().__init__(N, sliding_window_width, cc, "match3b_full", block_size_x)
+
 
 
 class PurgingSparse(object):

@@ -37,28 +37,29 @@ class CorrelateSparse(object):
     def compute(self, x, y, z, ct):
         """ perform a computation of the correlating algorithm and produce sparse matrix
 
-        :param d_x: an array storing the x-coordinates of the hits,
+        :param x: an array storing the x-coordinates of the hits,
             either a numpy ndarray or an array stored on the GPU
-        :type d_x: numpy ndarray or pycuda.driver.DeviceAllocation
+        :type x: numpy ndarray or pycuda.driver.DeviceAllocation
 
-        :param d_y: an array storing the y-coordinates of the hits,
+        :param y: an array storing the y-coordinates of the hits,
             either a numpy ndarray or an array stored on the GPU
-        :type d_x: numpy ndarray or pycuda.driver.DeviceAllocation
+        :type y: numpy ndarray or pycuda.driver.DeviceAllocation
 
-        :param d_z: an array storing the z-coordinates of the hits,
+        :param z: an array storing the z-coordinates of the hits,
             either a numpy ndarray or an array stored on the GPU
-        :type d_x: numpy ndarray or pycuda.driver.DeviceAllocation
+        :type z: numpy ndarray or pycuda.driver.DeviceAllocation
 
-        :param d_ct: an array storing the 'ct' value of the hits,
-            either a numpy ndarray or an array stored on the GPU
-            This is the time in nano seconds multiplied with the speed of light.
-        :type d_x: numpy ndarray or pycuda.driver.DeviceAllocation
+        :param ct: an array storing the 'ct' value of the hits,
+            either a numpy ndarray or an array stored on the GPU.
+            For the quadratic difference kernel this is the time in nano seconds multiplied with the speed of light.
+            For the match 3b kernel this is the time of the hits in nano seconds.
+        :type ct: numpy ndarray or pycuda.driver.DeviceAllocation
 
-        :returns: d_col_idx, d_prefix_sums, d_degrees
-            d_col_idx, d_prefix_sums: The sparse matrix in CSR notation. d_col_idx stores the column indices,
-            the size equals the number of correlations (or edges in the graph).
-            d_prefix_sums stores per row, the start index of the row within the column index array. The size of d_prefix_sums is equal to the number of hits.
-            d_degrees: The number of correlated hits per hit, stored as an array of size equal to the number of hits.
+        :returns: The sparse matrix in CSR notation, and the number of correlated hits per hit (degree).
+
+            * d_col_idx: stores the column indices, the size equals the number of correlations (or edges in the graph).
+            * d_prefix_sums: stores per row, the start index of the row within the column index array. The size of d_prefix_sums is equal to the number of hits.
+            * d_degrees: The number of correlated hits per hit, stored as an array of size equal to the number of hits.
 
         :rtype: tuple( pycuda.driver.DeviceAllocation )
 
@@ -128,6 +129,37 @@ class QuadraticDifferenceSparse(CorrelateSparse):
         super().__init__(N, sliding_window_width, cc, "quadratic_difference_full", block_size_x)
 
 
+    def compute(self, x, y, z, ct):
+        """ perform a computation of the correlating algorithm and produce sparse matrix
+
+        :param x: an array storing the x-coordinates of the hits,
+            either a numpy ndarray or an array stored on the GPU
+        :type x: numpy ndarray or pycuda.driver.DeviceAllocation
+
+        :param y: an array storing the y-coordinates of the hits,
+            either a numpy ndarray or an array stored on the GPU
+        :type y: numpy ndarray or pycuda.driver.DeviceAllocation
+
+        :param z: an array storing the z-coordinates of the hits,
+            either a numpy ndarray or an array stored on the GPU
+        :type z: numpy ndarray or pycuda.driver.DeviceAllocation
+
+        :param ct: an array storing the 'ct' value of the hits,
+            either a numpy ndarray or an array stored on the GPU.
+            This is the time in nano seconds multiplied with the speed of light.
+        :type ct: numpy ndarray or pycuda.driver.DeviceAllocation
+
+        :returns: The sparse matrix in CSR notation, and the number of correlated hits per hit (degree).
+
+            * d_col_idx: stores the column indices, the size equals the number of correlations (or edges in the graph).
+            * d_prefix_sums: stores per row, the start index of the row within the column index array. The size of d_prefix_sums is equal to the number of hits.
+            * d_degrees: The number of correlated hits per hit, stored as an array of size equal to the number of hits.
+
+        :rtype: tuple( pycuda.driver.DeviceAllocation )
+
+        """
+        return super().compute(x, y, z, ct)
+
 class Match3BSparse(CorrelateSparse):
     """ class that provides an interface to the Match 3B GPU Kernel and maintains GPU state"""
 
@@ -157,6 +189,38 @@ class Match3BSparse(CorrelateSparse):
         """
         block_size_x = 512
         super().__init__(N, sliding_window_width, cc, "match3b_full", block_size_x)
+
+
+    def compute(self, x, y, z, t):
+        """ perform a computation of the correlating algorithm and produce sparse matrix
+
+        :param x: an array storing the x-coordinates of the hits,
+            either a numpy ndarray or an array stored on the GPU
+        :type x: numpy ndarray or pycuda.driver.DeviceAllocation
+
+        :param y: an array storing the y-coordinates of the hits,
+            either a numpy ndarray or an array stored on the GPU
+        :type y: numpy ndarray or pycuda.driver.DeviceAllocation
+
+        :param z: an array storing the z-coordinates of the hits,
+            either a numpy ndarray or an array stored on the GPU
+        :type z: numpy ndarray or pycuda.driver.DeviceAllocation
+
+        :param t: an array storing the 't' value of the hits,
+            either a numpy ndarray or an array stored on the GPU.
+            This is the time in nano seconds.
+        :type t: numpy ndarray or pycuda.driver.DeviceAllocation
+
+        :returns: The sparse matrix in CSR notation, and the number of correlated hits per hit (degree).
+
+            * d_col_idx: stores the column indices, the size equals the number of correlations (or edges in the graph).
+            * d_prefix_sums: stores per row, the start index of the row within the column index array. The size of d_prefix_sums is equal to the number of hits.
+            * d_degrees: The number of correlated hits per hit, stored as an array of size equal to the number of hits.
+
+        :rtype: tuple( pycuda.driver.DeviceAllocation )
+
+        """
+        return super().compute(x, y, z, t)
 
 
 

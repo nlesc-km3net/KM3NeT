@@ -11,13 +11,13 @@
 #include <stdio.h>
 #include <cmath>
 
-__global__ void move_nodes(int *col_idx, int *prefix_sum, int *degrees, int *community_idx, int *community_degrees, int *tmp_community_idx, int *m_tot) {
-    const int graph_size = 34;
+__global__ void move_nodes(int *n_tot, int *m_tot, int *col_idx, int *prefix_sum, int *degrees, int *community_idx, int *community_degrees, int *tmp_community_idx) {
+    const int graph_ord = *n_tot;
     const int m = *m_tot;
     int ti = blockIdx.x * block_size_x + threadIdx.x;
 
 
-    for(int i = ti; i < graph_size; i += block_size_x ) {
+    for(int i = ti; i < graph_ord; i += block_size_x ) {
 
         //define neighbour range
         int start = 0;
@@ -67,7 +67,7 @@ __global__ void move_nodes(int *col_idx, int *prefix_sum, int *degrees, int *com
                 l_i_comm++;
             }
 
-            // local_q = (1.0 / (float)graph_size) * ((float)l_i_comm - ((float)degrees[i] * (float)k_comm / (2.0 * (float)graph_size)));
+            // local_q = (1.0 / (float)graph_ord) * ((float)l_i_comm - ((float)degrees[i] * (float)k_comm / (2.0 * (float)graph_ord)));
             local_q = (1.0 / (float)m) * ((float)l_i_comm - ((float)degrees[i] * (float)k_comm / (2.0 * (float)m)));
             // local_q = (1 / (2* (float)m_tot)) * ( l_i_comm - (k_comm * (float)degrees[i] / (float)m_tot) );
 
@@ -109,13 +109,13 @@ __global__ void move_nodes(int *col_idx, int *prefix_sum, int *degrees, int *com
     }
 }
 
-__global__ void calculate_community_degrees(int *community_idx, int *degrees, int *community_degrees) {
-    const int graph_size = 34;
+__global__ void calculate_community_degrees(int *n_tot, int *community_idx, int *degrees, int *community_degrees) {
+    const int graph_ord = *n_tot;
     int ti = blockIdx.x * block_size_x + threadIdx.x;
 
-    for(int i = ti; i < graph_size; i += block_size_x ) {
+    for(int i = ti; i < graph_ord; i += block_size_x ) {
         int com_deg = 0;
-        for(int j = 0; j < graph_size; j++) {
+        for(int j = 0; j < graph_ord; j++) {
             if(community_idx[j] == i) {
                 com_deg += degrees[j];
             }
@@ -124,11 +124,11 @@ __global__ void calculate_community_degrees(int *community_idx, int *degrees, in
     }
 }
 
-__global__ void calculate_community_internal_edges(int *col_idx, int *prefix_sum, int *community_idx, int *community_int_edg) {
-    const int graph_size = 34;
+__global__ void calculate_community_internal_edges(int *n_tot, int *col_idx, int *prefix_sum, int *community_idx, int *community_int_edg) {
+    const int graph_ord = *n_tot;
     int ti = blockIdx.x * block_size_x + threadIdx.x;
 
-    for(int i = ti; i < graph_size; i += block_size_x ) {
+    for(int i = ti; i < graph_ord; i += block_size_x ) {
         int inter_count = 0;
        
         //define neighbour range
@@ -151,13 +151,13 @@ __global__ void calculate_community_internal_edges(int *col_idx, int *prefix_sum
     }
 }
 
-__global__ void calculate_community_internal_sum(int *community_idx, int *community_int_edg, int *community_internal_sum) {
-    const int graph_size = 34;
+__global__ void calculate_community_internal_sum(int *n_tot, int *community_idx, int *community_int_edg, int *community_internal_sum) {
+    const int graph_ord = *n_tot;
     int ti = blockIdx.x * block_size_x + threadIdx.x;
 
-    for(int i = ti; i < graph_size; i += block_size_x ) {
+    for(int i = ti; i < graph_ord; i += block_size_x ) {
         int comm_sum = 0;
-        for(int j = 0; j < graph_size; j++) {
+        for(int j = 0; j < graph_ord; j++) {
             if(community_idx[j] == i) {
                 comm_sum += community_int_edg[j];
             }
@@ -168,12 +168,12 @@ __global__ void calculate_community_internal_sum(int *community_idx, int *commun
     }
 }
 
-__global__ void calc_part_modularity(int *inter_comm_deg, int *community_degrees, int *m_tot, float *part_modularities) {
-    const int graph_size = 34;
+__global__ void calc_part_modularity(int *n_tot, int *m_tot, int *inter_comm_deg, int *community_degrees, float *part_modularities) {
+    const int graph_ord = *n_tot;
     const int m_ = *m_tot;
     int ti = blockIdx.x * block_size_x + threadIdx.x;
 
-    for(int i = ti; i < graph_size; i += block_size_x) {
+    for(int i = ti; i < graph_ord; i += block_size_x) {
         float lc = (float)inter_comm_deg[i];
         float kc = (float)community_degrees[i];
         float m = (float)m_;

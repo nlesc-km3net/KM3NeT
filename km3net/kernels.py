@@ -402,8 +402,12 @@ class LouvainSparse(object):
 
         h_degrees = np.zeros(self.N).astype(np.int32)
         drv.memcpy_dtoh(h_degrees, d_degrees)
-        h_total_m = np.int32(h_degrees.sum()/2)
-        d_total_m = allocate_and_copy(h_total_m)
+
+        # allocate number of nodes
+        d_total_n = allocate_and_copy(np.int32(self.N))
+        # allocate number of edges
+        total_m = np.int32(h_degrees.sum()/2)
+        d_total_m = allocate_and_copy(total_m)
 
         # copy col_idx to local
         h_col_idx = np.zeros(h_degrees.sum()).astype(np.int32)
@@ -417,6 +421,7 @@ class LouvainSparse(object):
         h_community_degrees = h_degrees
         d_community_degrees = allocate_and_copy(h_community_degrees)
         # initially community index represents node index
+        init_community_idx = np.arange(self.N).astype(np.int32)
         h_community_idx = np.arange(self.N).astype(np.int32)
         d_community_idx = allocate_and_copy(h_community_idx)
         
@@ -435,23 +440,23 @@ class LouvainSparse(object):
 
         # argument list for calculating node moves
         d_tmp_community_idx = allocate_and_copy(np.zeros(self.N).astype(np.int32))
-        args_move_nodes = [d_col_idx, d_prefix_sums, d_degrees, d_community_idx, d_community_degrees, d_tmp_community_idx, d_total_m]
+        args_move_nodes = [d_total_n, d_total_m, d_col_idx, d_prefix_sums, d_degrees, d_community_idx, d_community_degrees, d_tmp_community_idx]
 
         # argument list for calculating node moves
         d_tmp_community_degrees = allocate_and_copy(np.zeros(self.N).astype(np.int32))
-        args_calc_comm_deg = [d_tmp_community_idx, d_degrees, d_tmp_community_degrees]
+        args_calc_comm_deg = [d_total_n, d_tmp_community_idx, d_degrees, d_tmp_community_degrees]
         
         # argument list for calculating inter-connecting edges within communities
         d_tmp_community_inter = allocate_and_copy(np.zeros(self.N).astype(np.int32))
-        args_calc_comm_inter = [d_col_idx, d_prefix_sums, d_tmp_community_idx, d_tmp_community_inter]
+        args_calc_comm_inter = [d_total_n, d_col_idx, d_prefix_sums, d_tmp_community_idx, d_tmp_community_inter]
 
         # argument list for calculating inter-connecting edges within communities
         d_tmp_community_inter_sum = allocate_and_copy(np.zeros(self.N).astype(np.int32))
-        args_calc_comm_inter_sum = [d_tmp_community_idx, d_tmp_community_inter, d_tmp_community_inter_sum]
+        args_calc_comm_inter_sum = [d_total_n, d_tmp_community_idx, d_tmp_community_inter, d_tmp_community_inter_sum]
 
         # argument list for calculating modulatities
         d_part_mod = allocate_and_copy(np.zeros(self.N).astype(np.float32))
-        args_part_mod = [d_tmp_community_inter_sum, d_tmp_community_degrees, d_total_m, d_part_mod]
+        args_part_mod = [d_total_n, d_total_m, d_tmp_community_inter_sum, d_tmp_community_degrees, d_part_mod]
 
 
         total_iterations = 0
@@ -473,7 +478,9 @@ class LouvainSparse(object):
                 # tmp_community_idx = np.zeros(self.N).astype(np.int32)
                 # drv.memcpy_dtoh(tmp_community_idx, d_tmp_community_idx)
                 # print('-----------------------------------------------')
-                # print('ITERATION RESULT:')
+                # print('-----------------------------------------------')
+                # print('----------- ITERATION [' + str(total_iterations) + '] RESULT --------------')
+                # print('-----------------------------------------------')
                 # print(tmp_community_idx)
 
                 # 2: Calculate degrees of communities
@@ -587,6 +594,10 @@ class LouvainSparse(object):
             # print(new_community_degrees)
             # print('new_total_hits: ' + str(new_community_degrees.sum()))
 
+            # update community_idx
+            for i in range(self.N):
+                init_community_idx[i] = h_community_idx[init_community_idx[i]]
+
             # CREATE NEW GRAPH
             h_col_idx = new_col_idx
             h_prefix_sums = new_prefix_sums
@@ -604,5 +615,4 @@ class LouvainSparse(object):
             if (total_iterations == 5):
                 break
                     
-        
-        return h_community_idx
+        return init_community_idx

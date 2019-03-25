@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <cmath>
 
-__global__ void move_nodes(int *n_tot, int *m_tot, int *col_idx, int *prefix_sum, int *degrees, int *community_idx, int *community_degrees, int *tmp_community_idx) {
+__global__ void move_nodes(int *n_tot, int *m_tot, int *col_idx, int *col_weights, int *prefix_sum, int *degrees, int *community_idx, int *community_degrees, int *community_inter_deg, int *tmp_community_idx) {
     const int graph_ord = *n_tot;
     const int m = *m_tot;
     int ti = blockIdx.x * block_size_x + threadIdx.x;
@@ -36,12 +36,10 @@ __global__ void move_nodes(int *n_tot, int *m_tot, int *col_idx, int *prefix_sum
         for(int j = start; j < end; j++) {
 
             int col = col_idx[j];
-            
 
             //get community of neighbour
             int col_comm = community_idx[col];
 
-            int l_i_comm = 0;   //number of edges joining i with community
             int k_comm = community_degrees[col_comm];     //degree of community
 
             // The singlet minimum HEURISTIC
@@ -57,6 +55,7 @@ __global__ void move_nodes(int *n_tot, int *m_tot, int *col_idx, int *prefix_sum
                 continue;
             }
 
+            int k_i_comm = col_weights[j];   //sum of weights of edges joining i with community
             //search for other neighbors from this community
             for(int n = start; n < end; n++) {
                 int col_n = col_idx[n];
@@ -64,19 +63,27 @@ __global__ void move_nodes(int *n_tot, int *m_tot, int *col_idx, int *prefix_sum
                 if(community_idx[col_n] != col_comm) {
                     continue;
                 }
-                l_i_comm++;
+
+                k_i_comm += col_weights[n];
             }
 
-            // local_q = (1.0 / (float)graph_ord) * ((float)l_i_comm - ((float)degrees[i] * (float)k_comm / (2.0 * (float)graph_ord)));
-            local_q = (1.0 / (float)m) * ((float)l_i_comm - ((float)degrees[i] * (float)k_comm / (2.0 * (float)m)));
-            // local_q = (1 / (2* (float)m_tot)) * ( l_i_comm - (k_comm * (float)degrees[i] / (float)m_tot) );
+            // local_q = (1.0 / (float)graph_ord) * ((float)k_i_comm - ((float)degrees[i] * (float)k_comm / (2.0 * (float)graph_ord)));
+            // local_q = (1.0 / (float)m) * ((float)k_i_comm - ((float)degrees[i] * (float)k_comm / (2.0 * (float)m)));
+            // local_q = (1 / (2* (float)m_tot)) * ( k_i_comm - (k_comm * (float)degrees[i] / (float)m_tot) );
+
+            float comm_inter_deg = (float)community_inter_deg[col_comm];
+
+            float local_q_1 = ( (comm_inter_deg + 2.0f*k_i_comm) / (2.0f*m) ) - ( pow((k_comm + degrees[i])/(2.0f*m), 2.0f)) ;
+            float local_q_2 = (comm_inter_deg/(2.0f*m)) - pow((k_comm/(2.0f*m)), 2.0f) - pow((degrees[i]/(2.0f*m)), 2.0f);
+            local_q = local_q_1 - local_q_2;
 
             #ifdef DEBUG_MODE
             if(ti == 0) {
                 printf("=============== \n");
                 printf("migrate %d to %d \n", i, col_comm);
                 printf("m_tot = %d \n", m);
-                printf("l_i_comm = %d \n", l_i_comm);
+                printf("comm_inter_deg = %d \n", comm_inter_deg);
+                printf("k_i_comm = %d \n", k_i_comm);
                 printf("degrees[i] = %d \n", degrees[i]);
                 printf("k_comm = %d \n", k_comm);
                 printf("local_q = %f \n", local_q);
@@ -99,9 +106,6 @@ __global__ void move_nodes(int *n_tot, int *m_tot, int *col_idx, int *prefix_sum
                     new_comm = col_comm;
                     max_q = local_q;
                 }
-
-                
-                
             }
         }
 
@@ -124,7 +128,7 @@ __global__ void calculate_community_degrees(int *n_tot, int *community_idx, int 
     }
 }
 
-__global__ void calculate_community_internal_edges(int *n_tot, int *col_idx, int *prefix_sum, int *community_idx, int *community_int_edg) {
+__global__ void calculate_community_internal_edges(int *n_tot, int *col_idx, int *col_weights, int *prefix_sum, int *community_idx, int *community_int_edg) {
     const int graph_ord = *n_tot;
     int ti = blockIdx.x * block_size_x + threadIdx.x;
 
@@ -143,7 +147,7 @@ __global__ void calculate_community_internal_edges(int *n_tot, int *col_idx, int
         for (int j = start; j < end; j++) {
             int col = col_idx[j];
             if (community_idx[col] == current_comm) {
-                inter_count++;
+                inter_count += col_weights[j];
             }
         }
 

@@ -405,6 +405,7 @@ class LouvainSparse(object):
 
         # allocate number of nodes
         d_total_n = allocate_and_copy(np.int32(self.N))
+
         # allocate number of edges
         total_m = np.int32(h_degrees.sum()/2)
         d_total_m = allocate_and_copy(total_m)
@@ -418,13 +419,17 @@ class LouvainSparse(object):
         drv.memcpy_dtoh(h_prefix_sums, d_prefix_sums)
 
         #init state: each vertex represents its own community
-        h_community_degrees = h_degrees
+        h_community_degrees = h_degrees[:]
         d_community_degrees = allocate_and_copy(h_community_degrees)
+
         # initially community index represents node index
         init_community_idx = np.arange(self.N).astype(np.int32)
         h_community_idx = np.arange(self.N).astype(np.int32)
         d_community_idx = allocate_and_copy(h_community_idx)
-        
+
+        # allocate edges weight
+        h_col_weights = np.ones(len(h_col_idx)).astype(np.int32)
+        d_col_weights = allocate_and_copy(h_col_weights)
 
         #check data
         print('##### INIT GRAPH #####')
@@ -436,26 +441,27 @@ class LouvainSparse(object):
         print(h_degrees)
         print('h_community_degrees: ' + str(h_community_degrees.size))
         print(h_community_degrees)
-        
 
-        # argument list for calculating node moves
+        # temporary memory pointers
         d_tmp_community_idx = allocate_and_copy(np.zeros(self.N).astype(np.int32))
-        args_move_nodes = [d_total_n, d_total_m, d_col_idx, d_prefix_sums, d_degrees, d_community_idx, d_community_degrees, d_tmp_community_idx]
+        d_tmp_community_degrees = allocate_and_copy(np.zeros(self.N).astype(np.int32))
+        d_tmp_community_inter = allocate_and_copy(np.zeros(self.N).astype(np.int32))
+        d_tmp_community_inter_sum = allocate_and_copy(np.zeros(self.N).astype(np.int32))
+        d_part_mod = allocate_and_copy(np.zeros(self.N).astype(np.float32))
 
         # argument list for calculating node moves
-        d_tmp_community_degrees = allocate_and_copy(np.zeros(self.N).astype(np.int32))
+        args_move_nodes = [d_total_n, d_total_m, d_col_idx, d_col_weights, d_prefix_sums, d_degrees, d_community_idx, d_community_degrees, d_tmp_community_inter_sum, d_tmp_community_idx]
+
+        # argument list for calculating node moves
         args_calc_comm_deg = [d_total_n, d_tmp_community_idx, d_degrees, d_tmp_community_degrees]
         
         # argument list for calculating inter-connecting edges within communities
-        d_tmp_community_inter = allocate_and_copy(np.zeros(self.N).astype(np.int32))
-        args_calc_comm_inter = [d_total_n, d_col_idx, d_prefix_sums, d_tmp_community_idx, d_tmp_community_inter]
+        args_calc_comm_inter = [d_total_n, d_col_idx, d_col_weights, d_prefix_sums, d_tmp_community_idx, d_tmp_community_inter]
 
         # argument list for calculating inter-connecting edges within communities
-        d_tmp_community_inter_sum = allocate_and_copy(np.zeros(self.N).astype(np.int32))
         args_calc_comm_inter_sum = [d_total_n, d_tmp_community_idx, d_tmp_community_inter, d_tmp_community_inter_sum]
 
         # argument list for calculating modulatities
-        d_part_mod = allocate_and_copy(np.zeros(self.N).astype(np.float32))
         args_part_mod = [d_total_n, d_total_m, d_tmp_community_inter_sum, d_tmp_community_degrees, d_part_mod]
 
 
@@ -467,6 +473,9 @@ class LouvainSparse(object):
             #get data from device
             drv.memcpy_dtoh(h_degrees, d_degrees)
 
+            print('----------------------------------------------------')
+            print('----------- ITERATION [' + str(total_iterations) + '] --------------')
+            print('----------------------------------------------------')
             # START LOUVAIN
 
             phase_modularity = 0
@@ -475,31 +484,29 @@ class LouvainSparse(object):
                 # 1: Calculate best node moves
                 self.move_nodes(*args_move_nodes, block=self.threads, grid=self.grid)
 
-                # tmp_community_idx = np.zeros(self.N).astype(np.int32)
-                # drv.memcpy_dtoh(tmp_community_idx, d_tmp_community_idx)
-                # print('-----------------------------------------------')
-                # print('-----------------------------------------------')
-                # print('----------- ITERATION [' + str(total_iterations) + '] RESULT --------------')
-                # print('-----------------------------------------------')
-                # print(tmp_community_idx)
+                tmp_community_idx = np.zeros(self.N).astype(np.int32)
+                drv.memcpy_dtoh(tmp_community_idx, d_tmp_community_idx)
+                print('----------- ITERATION [' + str(total_iterations) + '] RESULT --------------')
+                print('tmp_community_idx:')
+                print(tmp_community_idx)
 
                 # 2: Calculate degrees of communities
                 self.calc_community_degrees(*args_calc_comm_deg, block=self.threads, grid=self.grid)
 
-                # tmp_community_degrees = np.zeros(self.N).astype(np.int32)
-                # drv.memcpy_dtoh(tmp_community_degrees, d_tmp_community_degrees)
-                # print('NEW tmp_community_degrees:')
-                # print(tmp_community_degrees)
+                tmp_community_degrees = np.zeros(self.N).astype(np.int32)
+                drv.memcpy_dtoh(tmp_community_degrees, d_tmp_community_degrees)
+                print('NEW tmp_community_degrees:')
+                print(tmp_community_degrees)
 
                 # 3: Calculate inter-connecting edges in communities
                 # 3.1: Calculate inter-connecting edges per node within same community
                 self.calc_community_inernal(*args_calc_comm_inter, block=self.threads, grid=self.grid)
                 self.calc_community_inernal_sum(*args_calc_comm_inter_sum, block=self.threads, grid=self.grid)
 
-                # tmp_internal = np.zeros(self.N).astype(np.int32)
-                # drv.memcpy_dtoh(tmp_internal, d_tmp_community_inter_sum)
-                # print('internal_links:')
-                # print(tmp_internal)
+                tmp_internal = np.zeros(self.N).astype(np.int32)
+                drv.memcpy_dtoh(tmp_internal, d_tmp_community_inter_sum)
+                print('internal_links:')
+                print(tmp_internal)
 
                 # 4: Calculate graph modularity
                 # 4.1: Calculate partial modularity per community
@@ -507,8 +514,8 @@ class LouvainSparse(object):
                 part_mod = np.zeros(self.N).astype(np.float32)
                 drv.memcpy_dtoh(part_mod, d_part_mod)
 
-                # print('part_mods:')
-                # print(part_mod)
+                print('part_mods:')
+                print(part_mod)
 
                 # 4.2: Summarize modularities (additive function)
                 current_mod = 0
@@ -529,7 +536,8 @@ class LouvainSparse(object):
                 drv.memcpy_htod(d_community_degrees, h_community_degrees)
 
                 # THIS REASSIGNMENT DOESNT WORK:
-                # d_community_idx = d_tmp_community_idx
+                # d_community_idx, d_tmp_community_idx = d_tmp_community_idx, d_community_idx
+                # d_community_degrees, d_tmp_community_degrees = d_tmp_community_degrees, d_community_degrees
                 # d_community_degrees = d_tmp_community_degrees
 
                 
@@ -542,9 +550,13 @@ class LouvainSparse(object):
             print(h_community_idx)
 
             # merge communities
+            # drv.memcpy_dtoh(h_community_idx, d_community_idx)
+            # drv.memcpy_dtoh(h_community_degrees, d_community_degrees)
 
             # Replace col_idx with community_idx
-            comm_col_idx = np.zeros(h_community_degrees.sum()).astype(np.int32)
+            comm_col_idx = np.zeros(len(h_col_idx)).astype(np.int32)
+            tmp_col_wieghts = np.zeros(len(h_col_idx)).astype(np.int32)
+            comm_prefix_sum = []
             new_col_last = 0
 
             for i in range(self.N):
@@ -557,13 +569,22 @@ class LouvainSparse(object):
 
                         for j in range(start, end):
                             col = h_col_idx[j]
+                            tmp_col_wieghts[new_col_last] = h_col_weights[j]
                             comm_col_idx[new_col_last] = h_community_idx[col]
                             new_col_last += 1
+                comm_prefix_sum = np.append(comm_prefix_sum, new_col_last)
 
-            comm_prefix_sum = np.cumsum(h_community_degrees)
+            # comm_prefix_sum = np.cumsum(h_community_degrees)
+            comm_prefix_sum = np.array(comm_prefix_sum).astype(np.int32)
+
+            print('========= REBUILDING GRAPH =========')
+            print('comm_col_idx:')
+            print(comm_col_idx)
+            print('comm_prefix_sum:')
+            print(comm_prefix_sum)
 
             new_col_idx = []
-            # new_weights = []
+            new_weights = []
             new_degrees_weighted = np.zeros(self.N).astype(np.int32)
             new_community_degrees = np.zeros(self.N)
             for i in range(self.N):
@@ -573,12 +594,18 @@ class LouvainSparse(object):
                 end = comm_prefix_sum[i]
 
                 corr_hits = comm_col_idx[start:end]
-                unique_hits = np.unique(corr_hits, return_counts=True)
-                new_col_idx = np.concatenate((new_col_idx, unique_hits[0]))
-                new_community_degrees[i] = len(unique_hits[0])
-                new_degrees_weighted[i] = unique_hits[1].sum()
+                unique_hits = np.unique(corr_hits)
+                new_col_idx = np.concatenate((new_col_idx, unique_hits))
+                new_local_weights = []
+                for idx in unique_hits:
+                    hit_weight = tmp_col_wieghts[np.where(corr_hits == idx)[0] + start].sum()
+                    new_local_weights = np.append(new_local_weights, hit_weight)
+                new_weights = np.concatenate((new_weights, new_local_weights))
+                new_community_degrees[i] = len(unique_hits)
+                new_degrees_weighted[i] = np.array(new_local_weights).sum()
 
             new_col_idx = np.array(new_col_idx).astype(np.int32)
+            new_weights = np.array(new_weights).astype(np.int32)
             new_prefix_sums = np.array(np.cumsum(new_community_degrees)).astype(np.int32)
 
             print('########## NEW GRAPH ##############')
@@ -586,10 +613,10 @@ class LouvainSparse(object):
             print(new_col_idx)
             print('new_prefix_sums ' + str(new_prefix_sums.size))
             print(new_prefix_sums)
-            print('new_degrees_weighted ' + str(new_degrees_weighted.size))
+            print('new_degrees_weighted ' + str(new_degrees_weighted.size) + ' /sum: ' + str(new_degrees_weighted.sum()))
             print(new_degrees_weighted)
-            # print('new_weights ' + str(new_weights.size))
-            # print(new_weights)
+            print('new_weights ' + str(new_weights.size) + ' /sum: ' + str(new_weights.sum()))
+            print(new_weights)
             # print('new_community_degrees ' + str(new_community_degrees.size))
             # print(new_community_degrees)
             # print('new_total_hits: ' + str(new_community_degrees.sum()))
@@ -603,12 +630,23 @@ class LouvainSparse(object):
             h_prefix_sums = new_prefix_sums
             h_degrees = new_degrees_weighted
             h_community_degrees = new_degrees_weighted
+            h_col_weights = new_weights
 
             drv.memcpy_htod(d_col_idx, h_col_idx)
+            drv.memcpy_htod(d_community_idx, init_community_idx)
+            drv.memcpy_htod(d_tmp_community_idx, init_community_idx)
             drv.memcpy_htod(d_prefix_sums, h_prefix_sums)
             drv.memcpy_htod(d_degrees, h_degrees)
+            drv.memcpy_htod(d_col_weights, h_col_weights)
 
             drv.memcpy_htod(d_community_degrees, h_community_degrees)
+
+            self.calc_community_inernal(*args_calc_comm_inter, block=self.threads, grid=self.grid)
+            self.calc_community_inernal_sum(*args_calc_comm_inter_sum, block=self.threads, grid=self.grid)
+            tmp_internal = np.zeros(self.N).astype(np.int32)
+            drv.memcpy_dtoh(tmp_internal, d_tmp_community_inter_sum)
+            print('NEW internal_links:')
+            print(tmp_internal)
             
 
             total_iterations +=1

@@ -181,6 +181,6 @@ __global__ void calc_part_modularity(int *n_tot, int *m_tot, int *inter_comm_deg
         float lc = (float)inter_comm_deg[i];
         float kc = (float)community_degrees[i];
         float m = (float)m_;
-        part_modularities[i] = ( ( lc/m ) - (pow(kc/(2*m), 2.0f)) );
+        part_modularities[i] = ( ( lc/m ) - (pow((kc*gamma_mod)/(2*m), 2.0f)) );
     }
 }

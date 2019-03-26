@@ -393,7 +393,7 @@ class LouvainSparse(object):
         self.threads = (block_size_x, 1, 1)
         self.grid = (int(self.max_blocks), 1)
 
-    def compute(self, col_idx, prefix_sums, degrees):
+    def compute(self, col_idx, prefix_sums, degrees, mod_threshold):
 
         # check input
         d_col_idx = ready_input(col_idx)
@@ -466,6 +466,8 @@ class LouvainSparse(object):
 
 
         total_iterations = 0
+        graph_modularity = 0
+
         while True:
             # for debug
             modularities = []
@@ -484,29 +486,29 @@ class LouvainSparse(object):
                 # 1: Calculate best node moves
                 self.move_nodes(*args_move_nodes, block=self.threads, grid=self.grid)
 
-                tmp_community_idx = np.zeros(self.N).astype(np.int32)
-                drv.memcpy_dtoh(tmp_community_idx, d_tmp_community_idx)
-                print('----------- ITERATION [' + str(total_iterations) + '] RESULT --------------')
-                print('tmp_community_idx:')
-                print(tmp_community_idx)
+                # tmp_community_idx = np.zeros(self.N).astype(np.int32)
+                # drv.memcpy_dtoh(tmp_community_idx, d_tmp_community_idx)
+                # print('----------- ITERATION [' + str(total_iterations) + '] RESULT --------------')
+                # print('tmp_community_idx:')
+                # print(tmp_community_idx)
 
                 # 2: Calculate degrees of communities
                 self.calc_community_degrees(*args_calc_comm_deg, block=self.threads, grid=self.grid)
 
-                tmp_community_degrees = np.zeros(self.N).astype(np.int32)
-                drv.memcpy_dtoh(tmp_community_degrees, d_tmp_community_degrees)
-                print('NEW tmp_community_degrees:')
-                print(tmp_community_degrees)
+                # tmp_community_degrees = np.zeros(self.N).astype(np.int32)
+                # drv.memcpy_dtoh(tmp_community_degrees, d_tmp_community_degrees)
+                # print('NEW tmp_community_degrees:')
+                # print(tmp_community_degrees)
 
                 # 3: Calculate inter-connecting edges in communities
                 # 3.1: Calculate inter-connecting edges per node within same community
                 self.calc_community_inernal(*args_calc_comm_inter, block=self.threads, grid=self.grid)
                 self.calc_community_inernal_sum(*args_calc_comm_inter_sum, block=self.threads, grid=self.grid)
 
-                tmp_internal = np.zeros(self.N).astype(np.int32)
-                drv.memcpy_dtoh(tmp_internal, d_tmp_community_inter_sum)
-                print('internal_links:')
-                print(tmp_internal)
+                # tmp_internal = np.zeros(self.N).astype(np.int32)
+                # drv.memcpy_dtoh(tmp_internal, d_tmp_community_inter_sum)
+                # print('internal_links:')
+                # print(tmp_internal)
 
                 # 4: Calculate graph modularity
                 # 4.1: Calculate partial modularity per community
@@ -514,8 +516,8 @@ class LouvainSparse(object):
                 part_mod = np.zeros(self.N).astype(np.float32)
                 drv.memcpy_dtoh(part_mod, d_part_mod)
 
-                print('part_mods:')
-                print(part_mod)
+                # print('part_mods:')
+                # print(part_mod)
 
                 # 4.2: Summarize modularities (additive function)
                 current_mod = 0
@@ -524,7 +526,7 @@ class LouvainSparse(object):
 
                 modularities = np.concatenate((modularities, [current_mod]))
 
-                if (abs(current_mod) <= abs(phase_modularity)):
+                if (current_mod - phase_modularity <= mod_threshold):
                     break
 
                 phase_modularity = current_mod
@@ -540,6 +542,7 @@ class LouvainSparse(object):
                 # d_community_degrees, d_tmp_community_degrees = d_tmp_community_degrees, d_community_degrees
                 # d_community_degrees = d_tmp_community_degrees
 
+            
                 
             print('######## MODULARITY GAIN #########')
             print(modularities)
@@ -549,9 +552,13 @@ class LouvainSparse(object):
             print('######## CURRENT ASSIGNMENTS ITERATION [' + str(total_iterations) + '] #########')
             print(h_community_idx)
 
+            if (phase_modularity - graph_modularity <= mod_threshold):
+                break
+
+            graph_modularity = phase_modularity
+
             # merge communities
-            # drv.memcpy_dtoh(h_community_idx, d_community_idx)
-            # drv.memcpy_dtoh(h_community_degrees, d_community_degrees)
+
 
             # Replace col_idx with community_idx
             comm_col_idx = np.zeros(len(h_col_idx)).astype(np.int32)
@@ -643,14 +650,8 @@ class LouvainSparse(object):
 
             self.calc_community_inernal(*args_calc_comm_inter, block=self.threads, grid=self.grid)
             self.calc_community_inernal_sum(*args_calc_comm_inter_sum, block=self.threads, grid=self.grid)
-            tmp_internal = np.zeros(self.N).astype(np.int32)
-            drv.memcpy_dtoh(tmp_internal, d_tmp_community_inter_sum)
-            print('NEW internal_links:')
-            print(tmp_internal)
             
 
             total_iterations +=1
-            if (total_iterations == 5):
-                break
                     
         return init_community_idx
